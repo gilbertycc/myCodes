@@ -19,8 +19,14 @@ from datetime import datetime
 
 def get_current_stockprice(ticker_name):
 
-    ticker = yf.Ticker(ticker_name)
-    current_price = ticker.info["currentPrice"]
+    ticker = yf.Ticker(ticker_name) 
+
+    if "navPrice" in ticker.info:
+      current_price = ticker.info["navPrice"]
+    elif "currentPrice" in ticker.info:
+      current_price = ticker.info["currentPrice"]
+    else:
+      current_price = ticker.info["ask"]
 
     return (current_price)
 
