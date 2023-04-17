@@ -13,6 +13,16 @@ from sklearn.svm import SVR
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from datetime import datetime
+
+
+
+def get_current_stockprice(ticker_name):
+
+    ticker = yf.Ticker(ticker_name)
+    current_price = ticker.info["currentPrice"]
+
+    return (current_price)
 
 
 
@@ -70,7 +80,7 @@ def pf_review(date_data, mv_data, pd_data, print_table=False):
       print(df_result_view)
 
 
-def pd_nth_days_result(scaled_last_n_days):
+def pd_nth_days_result(date_data, scaled_last_n_days):
     # Make predictions on the scaled data
     predicted_last_n_days = svr.predict(scaled_last_n_days[:-1])
 
@@ -82,6 +92,7 @@ def pd_nth_days_result(scaled_last_n_days):
 
     # Create a DataFrame with predicted prices and dates as index
     predicted_data = pd.DataFrame(predicted_last_n_days, index=last_n_dates, columns=["Predicted Close (n+1)"])
+    predicted_data.index = predicted_data.index.strftime('%Y-%m-%d')
 
     # Print the DataFrame
     print(predicted_data)
@@ -140,8 +151,21 @@ pf_review(date_data, mv_data, pd_data, False)
 n_days = 5
 last_n_days = mv_data[-n_days:].values.reshape(-1, 1)
 
+
+# Append the current price to the nparry
+current_price = np.array([ get_current_stockprice(ticker_name)]) 
+last_n_days = np.append(last_n_days, [current_price], axis=0)
+
+# Append the current date to date_data
+current_date = pd.Timestamp.now().strftime('%Y-%m-%d')
+current_date_index = pd.DatetimeIndex([current_date], tz='America/New_York')
+
+# append the new Index object to the existing Index
+date_data = date_data.append(current_date_index)
+
 # Scale the data using the same scaler object
 scaled_last_n_days = scaler.transform(last_n_days)
-pd_nth_days_result(scaled_last_n_days)
+print("Current price("+ticker_name+"):", current_price)
+pd_nth_days_result(date_data, scaled_last_n_days)
 
 
