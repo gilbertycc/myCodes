@@ -157,8 +157,9 @@ current_price = np.array([ get_current_stockprice(ticker_name)])
 last_n_days = np.append(last_n_days, [current_price], axis=0)
 
 # Append the current date to date_data
+date_data = date_data.tz_convert('UTC')
 current_date = pd.Timestamp.now().strftime('%Y-%m-%d')
-current_date_index = pd.DatetimeIndex([current_date], tz='America/New_York')
+current_date_index = pd.DatetimeIndex([current_date], tz='UTC')
 
 # append the new Index object to the existing Index
 date_data = date_data.append(current_date_index)
