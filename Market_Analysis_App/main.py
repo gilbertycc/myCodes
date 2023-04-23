@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 
 
 
-
-
 class Stock:
 
     ''' Class attribute '''
@@ -130,6 +128,8 @@ class BollingerBands(Stock):
         plt.plot(data_history.index, data_history['MA20'], label='20 Day Moving Average')
         plt.plot(data_history.index, data_history['UpperBand'], label='Upper Bollinger Band')
         plt.plot(data_history.index, data_history['LowerBand'], label='Lower Bollinger Band')
+        plt.fill_between(data_history.index, data_history['UpperBand'], data_history['LowerBand'], alpha=0.1)
+
         plt.legend(loc='upper left')
         plt.show()
 
@@ -386,8 +386,38 @@ class FibonacciRetracement(Stock):
         plt.show()
 
 
+class OBV(Stock):
+    def __init__(self, name_ticker, data_period='1y'):
+        Stock.__init__(self, name_ticker)
+        self.data_period = data_period
+        self.chart_figsize = (20, 12)
 
-class Analysis_TA(BollingerBands, MovingAverage, ADX, VWAP, StochasticOscillator, RSI, MADC, FibonacciRetracement):
+    def calculate_obv(self):
+        ticker_data = self.get_history_data()
+        obv = []
+        prev_obv = 0
+        for i in range(1, len(ticker_data)):
+            if ticker_data['Close'][i] > ticker_data['Close'][i-1]:
+                current_obv = prev_obv + ticker_data['Volume'][i]
+            elif ticker_data['Close'][i] < ticker_data['Close'][i-1]:
+                current_obv = prev_obv - ticker_data['Volume'][i]
+            else:
+                current_obv = prev_obv
+            obv.append(current_obv)
+            prev_obv = current_obv
+        return pd.Series(obv, index=ticker_data.index[1:])
+
+    def plot_chart_obv(self):
+        obv_data = self.calculate_obv()
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] OBV of symbol: {self.name_ticker} (Period: {self.data_period})")
+        plt.plot(obv_data.index, obv_data, label='OBV')
+        plt.axhline(y=0, color='black', linestyle='--')
+        plt.legend(loc='upper left')
+        plt.show()
+
+
+class Analysis_TA(BollingerBands, MovingAverage, ADX, VWAP, StochasticOscillator, RSI, MADC, FibonacciRetracement, OBV):
     def __init__(self, name_ticker, data_period='1y'):
         Stock.__init__(self, name_ticker)
         StochasticOscillator.__init__(self, name_ticker)
@@ -408,10 +438,11 @@ class SharpeRatio(Stock):
         self.annual_returns = self.daily_returns.mean() * 252
         self.annual_volatility = self.daily_returns.std() * np.sqrt(252)
         self.sharpe_ratio = (self.annual_returns - self.risk_free_rate) / self.annual_volatility
+        self.chart_figsize = (20, 12)
 
     def plot_returns(self):
         cumulative_returns = (self.stock_data / self.stock_data.iloc[0] - 1) * 100
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=self.chart_figsize)
         plt.plot(cumulative_returns)
         plt.title(f"Cumulative Returns of {self.name_ticker.upper()} ({self.data_period})")
         plt.ylabel("Cumulative Returns (%)")
@@ -430,11 +461,176 @@ class SharpeRatio(Stock):
         print(f"Max Drawdown: {max_drawdown:.2f}%")
 
 
+
+class RRnRRR(Stock):
+    def __init__(self, name_ticker):
+        Stock.__init__(self, name_ticker)
+        self.data = self.get_history_data()
+        
+    def get_rr(self, entry_price, stop_loss):
+        """
+        Calculates the risk-reward ratio (RR) for a given stock.
+
+        Parameters:
+        entry_price (float): The entry price of the stock.
+        stop_loss (float): The stop loss price for the stock.
+
+        Returns:
+        float: The risk-reward ratio.
+        """
+        reward = abs(self.data['Close'].iloc[-1] - entry_price)
+        risk = abs(entry_price - stop_loss)
+        
+        if reward == 0 or risk == 0:
+            return 0
+        
+        return reward / risk
+    
+    def get_rrr(self, entry_price, stop_loss, target_price):
+        """
+        Calculates the risk-reward ratio (RR) for a given stock.
+
+        Parameters:
+        entry_price (float): The entry price of the stock.
+        stop_loss (float): The stop loss price for the stock.
+        target_price (float): The target price for the stock.
+
+        Returns:
+        float: The risk-reward ratio.
+        """
+        reward = abs(target_price - entry_price)
+        risk = abs(entry_price - stop_loss)
+        
+        if reward == 0 or risk == 0:
+            return 0
+        
+        return reward / risk
+
+
+
+class BullBearIndicator(Stock):
+
+    def __init__(self, name_ticker, data_period='1y'):
+        Stock.__init__(self, name_ticker)
+        self.data_period = data_period
+        self.stock_data = self.get_history_data().dropna()
+        self.short_window = 20
+        self.long_window = 50
+        self.tf_rsi = 14
+        self.std_dev = 2
+        self.tf_bb = 20
+
+    ''' Signal - MA Indicator '''
+    def calculate_moving_averages(self):
+        self.stock_data['SMA_short'] = self.stock_data['Adj Close'].rolling(window=self.short_window).mean()
+        self.stock_data['SMA_long'] = self.stock_data['Adj Close'].rolling(window=self.long_window).mean()
+        
+    def is_bullish_ma(self):
+
+        self.calculate_moving_averages()
+        last_price = self.stock_data['Adj Close'].iloc[-1]
+        sma_short = self.stock_data['SMA_short'].iloc[-1]
+        sma_long = self.stock_data['SMA_long'].iloc[-1]
+        
+        if sma_short > sma_long and last_price > sma_short:
+            return True
+        else:
+            return False
+    
+    def is_bearish_ma(self):
+        self.calculate_moving_averages()
+        last_price = self.stock_data['Adj Close'].iloc[-1]
+        sma_short = self.stock_data['SMA_short'].iloc[-1]
+        sma_long = self.stock_data['SMA_long'].iloc[-1]
+        
+        if sma_short < sma_long and last_price < sma_short:
+            return True
+        else:
+            return False
+
+    ''' Signal - Breakdown Indicator '''          
+    def calculate_sma(self, period):
+        return self.stock_data['Adj Close'].rolling(window=period).mean()
+    
+    def is_bullish_bd(self):
+        sma_short = self.calculate_sma(self.short_window)
+        sma_long = self.calculate_sma(self.long_window)
+        if sma_short[-1] > sma_long[-1] and sma_short[-2] < sma_long[-2]:
+            return True
+        else:
+            return False
+    
+    def is_bearish_bd(self):
+        sma_short = self.calculate_sma(self.short_window)
+        sma_long = self.calculate_sma(self.long_window)
+        if sma_short[-1] < sma_long[-1] and sma_short[-2] > sma_long[-2]:
+            return True
+        else:
+            return False
+        
+
+    ''' Signal - OversoldSignal (RSI) Indicator '''
+    def calculate_rsi(self, timefram):
+        delta = self.stock_data['Adj Close'].diff().dropna()
+        gains = delta.copy()
+        losses = delta.copy()
+        gains[gains < 0] = 0
+        losses[losses > 0] = 0
+        avg_gain = gains.rolling(timefram).mean().dropna()
+        avg_loss = -losses.rolling(timefram).mean().dropna()
+        rs = avg_gain / avg_loss
+        rsi = 100.0 - (100.0 / (1.0 + rs))
+        return rsi
+    
+    def is_bullish_rsi(self):
+        rsi = self.calculate_rsi(self.tf_rsi)
+        if rsi.iloc[-1] < 30 and rsi.iloc[-2] > 30:
+            return True
+        else:
+            return False
+    
+    def is_bearish_rsi(self):
+        rsi = self.calculate_rsi(self.tf_rsi)
+        if rsi.iloc[-1] > 70 and rsi.iloc[-2] < 70:
+            return True
+        else:
+            return False
+
+    ''' Signal - BollingerBands Indicator '''
+    def calculate_bollinger_bands(self):
+        # Calculate rolling mean and standard deviation
+        self.stock_data['MA'] = self.stock_data['Close'].rolling(window=self.tf_bb).mean()
+        self.stock_data['STD'] = self.stock_data['Close'].rolling(window=self.tf_bb).std()
+
+        # Calculate upper and lower bands
+        self.stock_data['Upper Band'] = self.stock_data['MA'] + (self.stock_data['STD'] * self.std_dev)
+        self.stock_data['Lower Band'] = self.stock_data['MA'] - (self.stock_data['STD'] * self.std_dev)
+
+    def is_bullish_bollinger_bands(self):
+        self.calculate_bollinger_bands()
+        # Check if current price is below the lower band line
+        if self.stock_data['Close'].iloc[-1] < self.stock_data['Lower Band'].iloc[-1]:
+            return True
+        else:
+            return False
+
+    def is_bearish_bollinger_bands(self):
+        self.calculate_bollinger_bands()
+        # Check if current price is above the upper band line
+        if self.stock_data['Close'].iloc[-1] > self.stock_data['Upper Band'].iloc[-1]:
+            return True
+        else:
+            return False
+
+
+
+
+
 def main():
 
     ##### Main #####
 
-    review_stock = Analysis_TA("BA", '1y')
+    review_stock = Analysis_TA("NVDA", '6mo')
     print(review_stock)
 
     ''' Chart Analysis '''
@@ -446,12 +642,43 @@ def main():
     # review_stock.plot_chart_rsi()
     # review_stock.plot_chart_madc()
     # review_stock.plot_chart_fibonacci_retracement()
+    # review_stock.plot_chart_obv()
+
 
     ''' Signal - Bullish/Bearish
-    Moving Averages: 
-    Relative Strength Index (RSI)
-    MACD (Moving Average Convergence Divergence)
+    Moving Averages 
+    Breakdown
+    OversoldSignal - Relative Strength Index (RSI)
     Bollinger Bands
+    '''
+
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    ENDC = '\033[0m'
+
+    bb_signal = BullBearIndicator("MSFT", '6mo')
+    print("[BB Signal - MA] ",end='')
+    signal = 'Bullish signal detected' if bb_signal.is_bullish_ma() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
+    color = GREEN if bb_signal.is_bullish_ma() else RED if bb_signal.is_bearish_ma() else ENDC
+    print(color + signal + ENDC)
+    print("[BB Signal - Breakdown] ",end='')
+    signal = 'Bullish signal detected' if bb_signal.is_bullish_bd() else 'Bearish signal detected' if bb_signal.is_bearish_bd() else 'No clear signal detected'
+    color = GREEN if bb_signal.is_bullish_bd() else RED if bb_signal.is_bearish_bd() else ENDC
+    print(color + signal + ENDC)
+    print("[BB Signal - OversoldSignal(RSI)] ",end='')
+    signal = 'Bullish signal detected' if bb_signal.is_bullish_rsi() else 'Bearish signal detected' if bb_signal.is_bearish_rsi() else 'No clear signal detected'
+    color = GREEN if bb_signal.is_bullish_rsi() else RED if bb_signal.is_bearish_rsi() else ENDC
+    print(color + signal + ENDC)
+    print("[BB Signal - Bollinger Bands] ",end='')
+    signal = 'Bullish signal detected' if bb_signal.is_bullish_bollinger_bands() else 'Bearish signal detected' if bb_signal.is_bearish_bollinger_bands() else 'No clear signal detected'
+    color = GREEN if bb_signal.is_bullish_bollinger_bands() else RED if bb_signal.is_bearish_bollinger_bands() else ENDC
+    print(color + signal + ENDC)
+
+
+
+    '''
+    Signal - Technical analysis
+    Signal - Momentum
     '''
 
 
@@ -463,10 +690,27 @@ def main():
     Moving Average Convergence Divergence (MACD)
     '''
 
-    ''' RR / SharpRatio '''
-    sr = SharpeRatio("NVDA", '6mo', 0.04)
-    sr.get_metrics()
-    sr.plot_returns()
+    ''' RR & RRR/ SharpRatio '''
+    # sr = SharpeRatio("NVDA", '6mo', 0.04)
+    # sr.get_metrics()
+    # sr.plot_returns()
+
+    rr = RRnRRR('NVDA')
+    # Entry Price, Stop Loss, Target Price
+    print("RR:", rr.get_rr(271, 250))
+    print("RRR:", rr.get_rrr(271, 250, 275))
+    
+
+
+
+    ''' Strategy & Back test
+    OBV Strategy
+    Buy & Hold
+    '''
+
+
+
+
 
 if __name__ == "__main__":
     main()
