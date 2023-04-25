@@ -206,8 +206,8 @@ class VWAP(Stock):
         plt.title(f"[DA] VWAP of symbol: {self.name_ticker} (Period: {self.data_period})")
         plt.plot(vwap_data.index, self.get_history_data()['Close'], label='Closing Price')
         plt.plot(vwap_data.index, vwap_data, label='VWAP')
-        plt.axhline(y=vwap_data[-1], color='black', linestyle='--')
-        plt.axhline(y=25, color='gray', linestyle='--')
+        #plt.axhline(y=vwap_data[-1], color='black', linestyle='--')
+        #plt.axhline(y=25, color='gray', linestyle='--')
         plt.legend(loc='upper left')
         plt.show()
 
@@ -417,7 +417,31 @@ class OBV(Stock):
         plt.show()
 
 
-class Analysis_TA(BollingerBands, MovingAverage, ADX, VWAP, StochasticOscillator, RSI, MADC, FibonacciRetracement, OBV):
+class AccumulationDistributionLine(Stock):
+    
+    def __init__(self, name_ticker, data_period='1y'):
+        Stock.__init__(self, name_ticker)
+        self.data_period = data_period
+        
+        self.chart_figsize = (20, 12)
+    
+    def calculate_adl(self):
+        self.df = self.get_history_data()
+        self.df['CMF Multiplier'] = ((self.df['Close'] - self.df['Low']) - (self.df['High'] - self.df['Close'])) / (self.df['High'] - self.df['Low'])
+        self.df['CMF Volume'] = self.df['CMF Multiplier'] * self.df['Volume']
+        self.df['ADL'] = self.df['CMF Volume'].cumsum()
+        return self.df[['ADL']]
+
+    def plot_chart_ADL(self):
+        self.calculate_adl()
+        fig, ax = plt.subplots(figsize=self.chart_figsize)
+        ax.plot(self.df.index, self.df['ADL'], label='ADL')
+        ax.set(title=f"[DA] ADL of symbol: {self.name_ticker} (Period: {self.data_period})")
+        ax.legend(loc='upper left')
+        plt.show()
+
+
+class Analysis_TA(BollingerBands, MovingAverage, ADX, VWAP, StochasticOscillator, RSI, MADC, FibonacciRetracement, OBV, AccumulationDistributionLine):
     def __init__(self, name_ticker, data_period='1y'):
         Stock.__init__(self, name_ticker)
         StochasticOscillator.__init__(self, name_ticker)
@@ -624,89 +648,136 @@ class BullBearIndicator(Stock):
 
 
 
+def check_bullish(name_ticker, no_signal=2, data_period='6mo'):
+    bb_signal = BullBearIndicator(name_ticker, data_period)
+    indicators = [
+        {'name': 'Moving Average', 'is_bullish': bb_signal.is_bullish_ma()},
+        {'name': 'Breakdown', 'is_bullish': bb_signal.is_bullish_bd()},
+        {'name': 'OversoldSignal(RSI)', 'is_bullish': bb_signal.is_bullish_rsi()},
+        {'name': 'Bollinger Bands', 'is_bullish': bb_signal.is_bullish_bollinger_bands()}
+    ]
+    tickers = [name_ticker for i in indicators if i['is_bullish']]
+    return name_ticker if len(tickers) >= no_signal else None
+
+def check_bearish(name_ticker, no_signal=2, data_period='6mo'):
+    bb_signal = BullBearIndicator(name_ticker, data_period)
+    indicators = [
+        {'name': 'Moving Average', 'is_bearish': bb_signal.is_bearish_ma()},
+        {'name': 'Breakdown', 'is_bearish': bb_signal.is_bearish_bd()},
+        {'name': 'OversoldSignal(RSI)', 'is_bearish': bb_signal.is_bearish_rsi()},
+        {'name': 'Bollinger Bands', 'is_bearish': bb_signal.is_bearish_bollinger_bands()}
+    ]
+    tickers = [name_ticker for i in indicators if i['is_bearish']]
+    return name_ticker if len(tickers) >= no_signal else None
+
+def scan_sp500_bb():
+  
+    lst_bullish = []
+    lst_bearish = []
+
+    # Scrape S&P 500 tickers from Wikipedia
+    url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
+    dfs = pd.read_html(url, header=0)
+    sp500_df = dfs[0]
+    sp500_tickers = sp500_df['Symbol'].tolist()
+
+    # Replace "." with "-"
+    sp500_tickers = [ticker.replace(".", "-") for ticker in sp500_tickers]
+
+    # Create Tickers object with all the tickers
+    tickers = yf.Tickers(sp500_tickers)
+
+    for ticker in sp500_tickers:
+        if check_bullish(ticker) != None: lst_bullish.append(ticker)
+        if check_bearish(ticker) != None: lst_bearish.append(ticker)
+
+    #print (f'Bullish stock: {lst_bullish}')
+    #print (f'Bearish stock: {lst_bearish}')
+    return lst_bullish, lst_bearish
+
 
 
 def main():
 
     ##### Main #####
 
-    review_stock = Analysis_TA("NVDA", '6mo')
-    print(review_stock)
+    lst_bull, lst_bear = scan_sp500_bb()
+    shorted_list_stock = lst_bull + lst_bear
+    print (shorted_list_stock)
 
-    ''' Chart Analysis '''
-    # review_stock.plot_chart_MovingAverage()
-    # review_stock.plot_chart_BollingerBands()
-    # review_stock.plot_chart_ADX()
-    # review_stock.plot_chart_vwap()
-    # review_stock.plot_chart_stochastic_oscillator()
-    # review_stock.plot_chart_rsi()
-    # review_stock.plot_chart_madc()
-    # review_stock.plot_chart_fibonacci_retracement()
-    # review_stock.plot_chart_obv()
+    for stock in shorted_list_stock:
+      review_stock = Analysis_TA(stock, '1y')
+      print(review_stock)      
 
-
-    ''' Signal - Bullish/Bearish
-    Moving Averages 
-    Breakdown
-    OversoldSignal - Relative Strength Index (RSI)
-    Bollinger Bands
-    '''
-
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    ENDC = '\033[0m'
-
-    bb_signal = BullBearIndicator("MSFT", '6mo')
-    print("[BB Signal - MA] ",end='')
-    signal = 'Bullish signal detected' if bb_signal.is_bullish_ma() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
-    color = GREEN if bb_signal.is_bullish_ma() else RED if bb_signal.is_bearish_ma() else ENDC
-    print(color + signal + ENDC)
-    print("[BB Signal - Breakdown] ",end='')
-    signal = 'Bullish signal detected' if bb_signal.is_bullish_bd() else 'Bearish signal detected' if bb_signal.is_bearish_bd() else 'No clear signal detected'
-    color = GREEN if bb_signal.is_bullish_bd() else RED if bb_signal.is_bearish_bd() else ENDC
-    print(color + signal + ENDC)
-    print("[BB Signal - OversoldSignal(RSI)] ",end='')
-    signal = 'Bullish signal detected' if bb_signal.is_bullish_rsi() else 'Bearish signal detected' if bb_signal.is_bearish_rsi() else 'No clear signal detected'
-    color = GREEN if bb_signal.is_bullish_rsi() else RED if bb_signal.is_bearish_rsi() else ENDC
-    print(color + signal + ENDC)
-    print("[BB Signal - Bollinger Bands] ",end='')
-    signal = 'Bullish signal detected' if bb_signal.is_bullish_bollinger_bands() else 'Bearish signal detected' if bb_signal.is_bearish_bollinger_bands() else 'No clear signal detected'
-    color = GREEN if bb_signal.is_bullish_bollinger_bands() else RED if bb_signal.is_bearish_bollinger_bands() else ENDC
-    print(color + signal + ENDC)
+      ''' Chart Analysis '''
+      #review_stock.plot_chart_MovingAverage()
+      #review_stock.plot_chart_BollingerBands()
+      #review_stock.plot_chart_ADX()
+      #review_stock.plot_chart_vwap()
+      #review_stock.plot_chart_stochastic_oscillator()
+      #review_stock.plot_chart_rsi()
+      #review_stock.plot_chart_madc()
+      #review_stock.plot_chart_fibonacci_retracement()
+      #review_stock.plot_chart_obv()
+      # review_stock.plot_chart_ADL()
 
 
-
-    '''
-    Signal - Technical analysis
-    Signal - Momentum
-    '''
-
-
-
-    ''' Signal - oversold/overbought
-    Relative Strength Index (RSI)
-    Stochastic Oscillator
-    Commodity Channel Index (CCI)
-    Moving Average Convergence Divergence (MACD)
-    '''
-
-    ''' RR & RRR/ SharpRatio '''
-    # sr = SharpeRatio("NVDA", '6mo', 0.04)
-    # sr.get_metrics()
-    # sr.plot_returns()
-
-    rr = RRnRRR('NVDA')
-    # Entry Price, Stop Loss, Target Price
-    print("RR:", rr.get_rr(271, 250))
-    print("RRR:", rr.get_rrr(271, 250, 275))
+      ''' Signal - Bullish/Bearish 
+      Moving Averages 
+      Breakdown
+      OversoldSignal - Relative Strength Index (RSI)
+      Bollinger Bands
+      '''
     
+      GREEN = '\033[92m'
+      RED = '\033[91m'
+      ENDC = '\033[0m'
 
+      bb_signal = BullBearIndicator(stock, '6mo')
+      print("[BB Signal - MA] ",end='')
+      signal = 'Bullish signal detected' if bb_signal.is_bullish_ma() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
+      color = GREEN if bb_signal.is_bullish_ma() else RED if bb_signal.is_bearish_ma() else ENDC
+      print(color + signal + ENDC)
+      print("[BB Signal - Breakdown] ",end='')
+      signal = 'Bullish signal detected' if bb_signal.is_bullish_bd() else 'Bearish signal detected' if bb_signal.is_bearish_bd() else 'No clear signal detected'
+      color = GREEN if bb_signal.is_bullish_bd() else RED if bb_signal.is_bearish_bd() else ENDC
+      print(color + signal + ENDC)
+      print("[BB Signal - OversoldSignal(RSI)] ",end='')
+      signal = 'Bullish signal detected' if bb_signal.is_bullish_rsi() else 'Bearish signal detected' if bb_signal.is_bearish_rsi() else 'No clear signal detected'
+      color = GREEN if bb_signal.is_bullish_rsi() else RED if bb_signal.is_bearish_rsi() else ENDC
+      print(color + signal + ENDC)
+      print("[BB Signal - Bollinger Bands] ",end='')
+      signal = 'Bullish signal detected' if bb_signal.is_bullish_bollinger_bands() else 'Bearish signal detected' if bb_signal.is_bearish_bollinger_bands() else 'No clear signal detected'
+      color = GREEN if bb_signal.is_bullish_bollinger_bands() else RED if bb_signal.is_bearish_bollinger_bands() else ENDC
+      print(color + signal + ENDC)
+      
+      '''
+      Signal - Technical analysis
+      Signal - Momentum
+      '''
 
+      ''' Signal - oversold/overbought
+      Relative Strength Index (RSI)
+      Stochastic Oscillator
+      Commodity Channel Index (CCI)
+      Moving Average Convergence Divergence (MACD)
+      '''
 
-    ''' Strategy & Back test
-    OBV Strategy
-    Buy & Hold
-    '''
+      ''' RR & RRR/ SharpRatio '''
+      sr = SharpeRatio(stock, '6mo', 0.04)
+      sr.get_metrics()
+      sr.plot_returns()
+
+      '''
+      rr = RRnRRR('FFIV')
+      # Entry Price, Stop Loss, Target Price
+      print("RR:", rr.get_rr(134, 130))
+      print("RRR:", rr.get_rrr(134, 130, 140))
+      '''
+      ''' Strategy & Back test
+      OBV Strategy
+      Buy & Hold
+      '''
 
 
 
