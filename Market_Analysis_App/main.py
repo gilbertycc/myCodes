@@ -4,6 +4,10 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from io import StringIO, BytesIO
+from base64 import b64encode
+from IPython.core.display import HTML
+
 
 
 
@@ -70,6 +74,12 @@ class Stock:
             else:
                 return data_history
 
+    def get_stock_info_html(self):
+        html = f"<p>Symbol Type: {self.symbol_type}</p>"
+        html += f"<p>Ticker: {self.name_ticker}</p>"
+        html += f"<p>Current Data Period: {self.data_period}</p>"
+        html += f"<p>Latest Price: {self.get_current_price()}</p>"
+        return html
 
     def __str__(self):
         return f"[***** Symbol Info *****]\nSymbol Type: {self.symbol_type}\nTicker: {self.name_ticker}\nCurrent Data Period: {self.data_period}\nLatest Price: {self.get_current_price()}"
@@ -108,6 +118,35 @@ class MovingAverage(Stock):
         plt.legend(loc='upper left')
         plt.show()
 
+    def plot_chart_MovingAverage_html(self):
+        data_history = self.get_history_data()
+
+        if data_history is None:
+            return None
+
+        # calculate the MA
+        data_history['MA5'] = data_history['Adj Close'].rolling(window=5).mean()
+        data_history['MA10'] = data_history['Adj Close'].rolling(window=10).mean()
+        data_history['MA50'] = data_history['Adj Close'].rolling(window=50).mean()
+        data_history['MA200'] = data_history['Adj Close'].rolling(window=200).mean()
+
+        # plot the data and the moving averages
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] MA Chart of symbol: {self.name_ticker} (Period: {self.data_period})")
+        plt.plot(data_history.index, data_history['Adj Close'], label='Closing Price')
+        plt.plot(data_history.index, data_history['MA5'], label='MA5')
+        plt.plot(data_history.index, data_history['MA10'], label='MA10')
+        plt.plot(data_history.index, data_history['MA50'], label='MA50')
+        plt.plot(data_history.index, data_history['MA200'], label='MA200')
+        plt.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
+
 
 class BollingerBands(Stock):
     def __init__(self, name_ticker, data_period='1y'):
@@ -129,9 +168,33 @@ class BollingerBands(Stock):
         plt.plot(data_history.index, data_history['UpperBand'], label='Upper Bollinger Band')
         plt.plot(data_history.index, data_history['LowerBand'], label='Lower Bollinger Band')
         plt.fill_between(data_history.index, data_history['UpperBand'], data_history['LowerBand'], alpha=0.1)
-
         plt.legend(loc='upper left')
         plt.show()
+
+
+    def plot_chart_BollingerBands_html(self):
+        data_history = self.get_history_data()
+        data_history = self.get_history_data()
+        data_history['MA20'] = data_history['Close'].rolling(window=20).mean()
+        data_history['20dSTD'] = data_history['Close'].rolling(window=20).std()
+        data_history['UpperBand'] = data_history['MA20'] + (data_history['20dSTD'] * 2)
+        data_history['LowerBand'] = data_history['MA20'] - (data_history['20dSTD'] * 2)
+
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] Bollinger Bands of symbol: {self.name_ticker} (Period: {self.data_period})")
+        plt.plot(data_history.index, data_history['Close'], label='Closing Price')
+        plt.plot(data_history.index, data_history['MA20'], label='20 Day Moving Average')
+        plt.plot(data_history.index, data_history['UpperBand'], label='Upper Bollinger Band')
+        plt.plot(data_history.index, data_history['LowerBand'], label='Lower Bollinger Band')
+        plt.fill_between(data_history.index, data_history['UpperBand'], data_history['LowerBand'], alpha=0.1)
+        plt.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
 
 
 class ADX(Stock):
@@ -179,8 +242,28 @@ class ADX(Stock):
 
         # Add dashed line at 25
         plt.axhline(y=25, color='gray', linestyle='--')
-
         plt.show()
+
+    def plot_chart_ADX_html(self):
+        data_history = self.get_history_data()
+        data_history = self.calculate_true_range(data_history)
+        data_history = self.calculate_directional_indicators(data_history)
+
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] ADX of symbol: {self.name_ticker} (Period: {self.data_period})")
+        plt.plot(data_history.index, data_history['ADX'], label='ADX')
+        plt.legend(loc='upper left')
+
+        # Add dashed line at 25
+        plt.axhline(y=25, color='gray', linestyle='--')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
+
 
 
 class VWAP(Stock):
@@ -210,6 +293,23 @@ class VWAP(Stock):
         #plt.axhline(y=25, color='gray', linestyle='--')
         plt.legend(loc='upper left')
         plt.show()
+
+    def plot_chart_vwap_html(self):
+        vwap_data = self.calculate_vwap()
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] VWAP of symbol: {self.name_ticker} (Period: {self.data_period})")
+        plt.plot(vwap_data.index, self.get_history_data()['Close'], label='Closing Price')
+        plt.plot(vwap_data.index, vwap_data, label='VWAP')
+        #plt.axhline(y=vwap_data[-1], color='black', linestyle='--')
+        #plt.axhline(y=25, color='gray', linestyle='--')
+        plt.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
 
 
 class StochasticOscillator(Stock):
@@ -246,6 +346,26 @@ class StochasticOscillator(Stock):
         plt.axhline(y=80, color='gray', linestyle='--')
         plt.legend(loc='upper left')
         plt.show()
+
+    def plot_chart_stochastic_oscillator_html(self):
+        k, d = self.calculate_stochastic_oscillator()
+        ticker_data = self.get_history_data()
+
+        # Plot the stock data and Stochastic Oscillator
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] Stochastic Oscillato of symbol: {self.name_ticker} (Period: {self.data_period}, Timeframe: {self.timeframe}) days")
+        plt.plot(k, label='%K(Main)')
+        plt.plot(d, label='%D(MA)')
+        plt.axhline(y=20, color='gray', linestyle='--')
+        plt.axhline(y=80, color='gray', linestyle='--')
+        plt.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
 
 
 class RSI(Stock):
@@ -286,6 +406,30 @@ class RSI(Stock):
         plt.axhline(y=70, color='gray', linestyle='--')
         plt.legend(loc='upper left')
         plt.show()
+
+    def plot_chart_rsi_html(self):
+        data_history = self.get_history_data()
+
+        if data_history is None:
+            return None
+
+        rsi = self.calculate_rsi()
+
+        # plot the data and RSI
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] RSI Chart of symbol: {self.name_ticker} (Period: {self.data_period}, Timeframe: {self.timeframe}) days")
+        plt.plot(data_history.index, data_history['Adj Close'], label='Closing Price')
+        plt.plot(rsi.index, rsi, label='RSI')
+        plt.axhline(y=30, color='gray', linestyle='--')
+        plt.axhline(y=70, color='gray', linestyle='--')
+        plt.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
 
 
 class MADC(Stock):
@@ -332,6 +476,26 @@ class MADC(Stock):
         plt.legend(loc='upper left')
         plt.show()
 
+    def plot_chart_madc_html(self):
+        macd_line, signal_line, ma_diff = self.calculate_madc()
+
+        # plot the MACD line and signal line
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] MADC Chart of symbol: {self.name_ticker} (Period: {self.data_period})")
+        plt.plot(macd_line, label='MACD Line')
+        plt.plot(signal_line, label='Signal Line')
+
+        # plot the ma_diff
+        plt.bar(ma_diff.index, ma_diff, width=0.5, align='center', label=(f"MA{self.short_ma} - MA{self.long_ma}"), color='gray')
+
+        plt.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
 
 class FibonacciRetracement(Stock):
 
@@ -385,6 +549,30 @@ class FibonacciRetracement(Stock):
         plt.title("[DA] {} Stock Data ({}) with Fibonacci Retracement Levels".format(self.name_ticker.upper(), self.data_period))
         plt.show()
 
+    def plot_chart_fibonacci_retracement_html(self):
+        ticker_data = self.get_history_data()
+        highest_swing, lowest_swing = self.calculate_swing(ticker_data)
+        levels, colors, ratios = self.calculate_fibonacci_levels(ticker_data, highest_swing, lowest_swing)
+
+        plt.rcParams['figure.figsize'] = self.chart_figsize
+        plt.rc('font', size=14)
+        plt.plot(ticker_data['Close'])
+        start_date = ticker_data.index[min(highest_swing, lowest_swing)]
+        end_date = ticker_data.index[max(highest_swing, lowest_swing)]
+
+        for i in range(len(levels)):
+            plt.hlines(levels[i], xmin=ticker_data.index[0], xmax=ticker_data.index[-1], label="{:.1f}%".format(ratios[i] * 100), colors=colors[i], linestyles="dashed")
+
+        plt.legend()
+        plt.title("[DA] {} Stock Data ({}) with Fibonacci Retracement Levels".format(self.name_ticker.upper(), self.data_period))
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
+
 
 class OBV(Stock):
     def __init__(self, name_ticker, data_period='1y'):
@@ -417,6 +605,21 @@ class OBV(Stock):
         plt.show()
 
 
+    def plot_chart_obv_html(self):
+        obv_data = self.calculate_obv()
+        plt.figure(figsize=self.chart_figsize)
+        plt.title(f"[DA] OBV of symbol: {self.name_ticker} (Period: {self.data_period})")
+        plt.plot(obv_data.index, obv_data, label='OBV')
+        plt.axhline(y=0, color='black', linestyle='--')
+        plt.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
+
 class AccumulationDistributionLine(Stock):
     
     def __init__(self, name_ticker, data_period='1y'):
@@ -440,6 +643,19 @@ class AccumulationDistributionLine(Stock):
         ax.legend(loc='upper left')
         plt.show()
 
+    def plot_chart_ADL_html(self):
+        self.calculate_adl()
+        fig, ax = plt.subplots(figsize=self.chart_figsize)
+        ax.plot(self.df.index, self.df['ADL'], label='ADL')
+        ax.set(title=f"[DA] ADL of symbol: {self.name_ticker} (Period: {self.data_period})")
+        ax.legend(loc='upper left')
+        plt_buffer = BytesIO()
+        plt.savefig(plt_buffer, format='png')
+        plt_buffer.seek(0)
+        plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt.close()
+        return plt_html
 
 class Analysis_TA(BollingerBands, MovingAverage, ADX, VWAP, StochasticOscillator, RSI, MADC, FibonacciRetracement, OBV, AccumulationDistributionLine):
     def __init__(self, name_ticker, data_period='1y'):
@@ -701,9 +917,11 @@ def main():
 
     ##### Main #####
 
-    lst_bull, lst_bear = scan_sp500_bb()
-    shorted_list_stock = lst_bull + lst_bear
-    print (shorted_list_stock)
+    #lst_bull, lst_bear = scan_sp500_bb()
+    #shorted_list_stock = lst_bull + lst_bear
+    #print (shorted_list_stock)
+
+    shorted_list_stock = ['GOOG']
 
     for stock in shorted_list_stock:
       review_stock = Analysis_TA(stock, '1y')
@@ -721,17 +939,30 @@ def main():
       #review_stock.plot_chart_obv()
       # review_stock.plot_chart_ADL()
 
+      print(review_stock.get_stock_info_html())
+      print(review_stock.plot_chart_MovingAverage_html())
+      print(review_stock.plot_chart_BollingerBands_html())
+      print(review_stock.plot_chart_ADX_html())
+      print(review_stock.plot_chart_vwap_html())
+      print(review_stock.plot_chart_stochastic_oscillator_html())
+      print(review_stock.plot_chart_rsi_html())
+      print(review_stock.plot_chart_madc_html())
+      print(review_stock.plot_chart_fibonacci_retracement_html())
+      print(review_stock.plot_chart_obv_html())
+      print(review_stock.plot_chart_ADL_html())
+
 
       ''' Signal - Bullish/Bearish 
       Moving Averages 
       Breakdown
       OversoldSignal - Relative Strength Index (RSI)
       Bollinger Bands
-      '''
+      
     
       GREEN = '\033[92m'
       RED = '\033[91m'
       ENDC = '\033[0m'
+
 
       bb_signal = BullBearIndicator(stock, '6mo')
       print("[BB Signal - MA] ",end='')
@@ -751,7 +982,7 @@ def main():
       color = GREEN if bb_signal.is_bullish_bollinger_bands() else RED if bb_signal.is_bearish_bollinger_bands() else ENDC
       print(color + signal + ENDC)
       
-      '''
+      
       Signal - Technical analysis
       Signal - Momentum
       '''
@@ -766,7 +997,7 @@ def main():
       ''' RR & RRR/ SharpRatio '''
       sr = SharpeRatio(stock, '6mo', 0.04)
       sr.get_metrics()
-      sr.plot_returns()
+      #sr.plot_returns()
 
       '''
       rr = RRnRRR('FFIV')
