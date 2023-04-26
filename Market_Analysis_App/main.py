@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -143,7 +142,7 @@ class MovingAverage(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -192,7 +191,7 @@ class BollingerBands(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -260,7 +259,7 @@ class ADX(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -307,7 +306,7 @@ class VWAP(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -363,7 +362,7 @@ class StochasticOscillator(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -427,7 +426,7 @@ class RSI(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -493,7 +492,7 @@ class MADC(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -569,7 +568,7 @@ class FibonacciRetracement(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -616,7 +615,7 @@ class OBV(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -653,7 +652,7 @@ class AccumulationDistributionLine(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}'>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img'></a>"
         plt.close()
         return plt_html
 
@@ -912,19 +911,145 @@ def scan_sp500_bb():
     return lst_bullish, lst_bearish
 
 
+def generate_html_header():
+    html_output = f"""
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Stock Analysis Report</title>
+        <style>
+          .tab {{
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+          }}
+
+          .tab button {{
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+          }}
+
+          .tab button:hover {{
+            background-color: #ddd;
+          }}
+
+          .tab button.active {{
+            background-color: #ccc;
+          }}
+
+          .tabcontent {{
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+          }}
+          
+          .chart-container {{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+          }}
+
+          .chart-img {{
+            max-width: 40%;
+            height: auto;
+            margin: 5px;
+          }}
+        </style>
+      </head>
+      <body>
+    """
+    return html_output
+    
+def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, index_stock):
+    html_output = f"""
+    <div id="stock{index_stock}" class="tabcontent">
+      {review_stock.get_stock_info_html()}
+      
+      <h3>Market Signal</h3>
+      {bb_signals_html_output}
+      
+      <h3>Technical Chart</h3>
+      <div class="chart-container">
+        {review_stock.plot_chart_MovingAverage_html()}
+        {review_stock.plot_chart_BollingerBands_html()}
+        {review_stock.plot_chart_ADX_html()}
+        {review_stock.plot_chart_vwap_html()}
+        {review_stock.plot_chart_stochastic_oscillator_html()}
+        {review_stock.plot_chart_rsi_html()}
+        {review_stock.plot_chart_madc_html()}
+        {review_stock.plot_chart_fibonacci_retracement_html()}
+        {review_stock.plot_chart_obv_html()}
+        {review_stock.plot_chart_ADL_html()}
+      </div>
+    </div>
+    """
+    return html_output
+
+
+def generate_html_body_tab(name_stock, index_stock, index_end):
+    if index_stock == 0:
+        html_output = f"""
+        <div class="tab">
+            <button class="tablinks" onclick="openStock(event, 'stock{index_stock}')" id="defaultOpen">{name_stock}</button>
+        """
+    else:
+        html_output = f"""
+            <button class="tablinks" onclick="openStock(event, 'stock{index_stock}')">{name_stock}</button>
+        """
+    if index_end == index_stock+1:
+        html_output += f"""
+        </div>
+        """
+    return html_output
+
+
+def generate_html_end():
+    html_output = f"""
+    <script>
+        function openStock(evt, stockName) {{
+            var i, tabcontent, tablinks;
+              tabcontent = document.getElementsByClassName("tabcontent");
+              for (i = 0; i < tabcontent.length; i++) {{
+                  tabcontent[i].style.display = "none";
+              }}
+              tablinks = document.getElementsByClassName("tablinks");
+              for (i = 0; i < tablinks.length; i++) {{
+                  tablinks[i].className = tablinks[i].className.replace(" active", "");
+              }}
+              document.getElementById(stockName).style.display = "block";
+              evt.currentTarget.className += " active";
+          }}
+          document.getElementById("defaultOpen").click();
+      </script>
+      </body>
+    </html>
+    """
+    return html_output
+
+
+
 
 def main():
 
     ##### Main #####
 
-    #lst_bull, lst_bear = scan_sp500_bb()
-    #shorted_list_stock = lst_bull + lst_bear
-    #print (shorted_list_stock)
+    lst_bull, lst_bear = scan_sp500_bb()
+    shorted_list_stock = lst_bull + lst_bear
+    print (shorted_list_stock)
 
-    shorted_list_stock = ['GOOG']
 
-    for stock in shorted_list_stock:
-      review_stock = Analysis_TA(stock, '1y')
+    html_body_tab = ""
+    html_body_stock = ""
+    #shorted_list_stock = ['GOOG']
+
+    for i in range(len(shorted_list_stock)):
+      review_stock = Analysis_TA(shorted_list_stock[i], '1y')
       print(review_stock)      
 
       ''' Chart Analysis '''
@@ -938,7 +1063,7 @@ def main():
       #review_stock.plot_chart_fibonacci_retracement()
       #review_stock.plot_chart_obv()
       # review_stock.plot_chart_ADL()
-
+      '''
       print(review_stock.get_stock_info_html())
       print(review_stock.plot_chart_MovingAverage_html())
       print(review_stock.plot_chart_BollingerBands_html())
@@ -950,7 +1075,29 @@ def main():
       print(review_stock.plot_chart_fibonacci_retracement_html())
       print(review_stock.plot_chart_obv_html())
       print(review_stock.plot_chart_ADL_html())
+      '''
 
+        
+      # Define colors
+      GREEN = "#008000"
+      RED = "#FF0000"
+      ENDC = "</span>"
+
+      bb_signal = BullBearIndicator(shorted_list_stock[i], '6mo')
+      # Define signals
+      bb_signals = {
+        'MA': bb_signal.is_bullish_ma,
+        'Breakdown': bb_signal.is_bullish_bd,
+        'OversoldSignal(RSI)': bb_signal.is_bullish_rsi,
+        'Bollinger Bands': bb_signal.is_bullish_bollinger_bands
+      }
+
+      # Create HTML output
+      bb_signals_html = ""
+      for signal_type, signal_func in bb_signals.items():
+          signal = 'Bullish signal detected' if signal_func() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
+          color = GREEN if signal_func() else RED if bb_signal.is_bearish_ma() else ENDC
+          bb_signals_html += f"<p><span style='color:{color}'>[Bullish & Bearish Signal - {signal_type}] {signal}</span></p>"
 
       ''' Signal - Bullish/Bearish 
       Moving Averages 
@@ -995,8 +1142,8 @@ def main():
       '''
 
       ''' RR & RRR/ SharpRatio '''
-      sr = SharpeRatio(stock, '6mo', 0.04)
-      sr.get_metrics()
+      #sr = SharpeRatio(stock, '6mo', 0.04)
+      #sr.get_metrics()
       #sr.plot_returns()
 
       '''
@@ -1012,7 +1159,16 @@ def main():
 
 
 
+      # Prepare the html report body
+      html_body_tab += generate_html_body_tab(shorted_list_stock[i],i,len(shorted_list_stock))
+      html_body_stock += generate_html_body_stock(shorted_list_stock[i],review_stock, bb_signals_html, i)
 
+    # Generate HTML report  
+    print(generate_html_header())
+    print(html_body_tab)
+    print(html_body_stock)
+    print(generate_html_end())
 
 if __name__ == "__main__":
     main()
+
