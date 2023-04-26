@@ -10,6 +10,8 @@ Users of the tool should conduct their own research and seek professional financ
 
 ###
 
+Demo Report Link: https://gilbertycc.github.io/myCodes/
+
 This is a Python application that analyzes stocks from the S&P500 stock list and generates an analysis report in HTML format.
 
 Required Libraries
