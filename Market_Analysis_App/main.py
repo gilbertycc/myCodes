@@ -1052,7 +1052,7 @@ def generate_html_end():
     return html_output
 
 
-def generate_full_html_report(index_stock,index_end,html_body_tab,html_body_stock, export_file_path='../docs/'):
+def generate_full_html_report(index_stock,index_end,html_body_tab,html_body_stock, export_file_path='./'):
 
     export_full_path=export_file_path+'index.html'
     
