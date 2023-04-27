@@ -1,23 +1,17 @@
-name: Run Python Script
-
+name: My Workflow
 on:
-  workflow_dispatch:
-    # Input to provide the path to the Python script
-    inputs:
-      path:
-        description: 'Path to the Python script to run'
-        required: true
-        type: string
-
+  push:
+    branches:
+      - main
 jobs:
-  run-script:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-    - name: Run Python script
-      run: python ${{ inputs.path }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Run script
+        run: python script.py
