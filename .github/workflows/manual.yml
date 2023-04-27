@@ -26,11 +26,5 @@ jobs:
         pwd
         ls
 
-    - name: Display checked-out file
-      run: |
-        cd "${{ github.workspace }}"
-        pwd
-        ls -l "${{ github.event.inputs.filename }}"
-        
     - name: Run script
       run: python ${{ github.workspace }}/Market_Analysis_App/main.py
