@@ -22,12 +22,22 @@ jobs:
         
     - name: Run script
       run: python ${{ github.workspace }}/Market_Analysis_App/main.py
+
+    - name: Display report directory root
+      run: |
+        cd "${{ github.workspace }}"
+        pwd
+        ls
       
     - name: Display report directory
       run: |
         cd "${{ github.workspace }}/docs"
         pwd
         ls
+
+    - name: Move file with force
+      run: mv -f ${{ github.workspace }}/index.html ${{ github.workspace }}/docs/index.html
+
     - name: Upload report2
       uses: actions/upload-artifact@v3
       with:
