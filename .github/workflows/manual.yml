@@ -20,27 +20,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install yfinance pandas numpy matplotlib ipython yfinance
         
-    - name: Display root directory
-      run: |
-        cd "${{ github.workspace }}"
-        pwd
-        ls
-
-    #- name: Run script
-    #  run: python ${{ github.workspace }}/Market_Analysis_App/main.py
+    - name: Run script
+      run: python ${{ github.workspace }}/Market_Analysis_App/main.py
       
     - name: Display report directory
       run: |
         cd "${{ github.workspace }}/docs"
         pwd
         ls
-      
-    - name: Upload report
-      uses: actions/upload-artifact@v3
-      with:
-        name: report
-        path: index.html
-
     - name: Upload report2
       uses: actions/upload-artifact@v3
       with:
