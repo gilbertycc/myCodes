@@ -20,4 +20,4 @@ jobs:
         python -m pip install --upgrade pip
         pip install yfinance
     - name: Run script
-      run: python ../Market_Analysis_App/main.py
+      run: python /gilbertycc/myCodes/main/Market_Analysis_App/main.py
