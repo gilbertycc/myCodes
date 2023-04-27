@@ -35,11 +35,34 @@ jobs:
         pwd
         ls
 
-    - name: Move file with force
-      run: mv -f ${{ github.workspace }}/index.html ${{ github.workspace }}/docs/index.html
-
-    - name: Upload report2
-      uses: actions/upload-artifact@v3
+    - name: Configure Git
+      uses: angelosuinan/github-config-action@v1
       with:
-        name: report
-        path: ${{ github.workspace }}/docs/index.html
+        user.name: gilbertycc
+        user.email: test@text.com
+
+    - name: Add and commit changes
+      uses: EndBug/add-and-commit@v7.0.0
+      with:
+        message: 'Update index.html'
+        add: 'index.html'
+    
+    
+    - name: Push changes
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ S1 }}
+        script: |
+          const { context, GitHub } = require('@actions/github');
+          const { owner, repo } = context.repo;
+          const gitHub = new GitHub(process.env.GITHUB_TOKEN);
+          gitHub.repos.createOrUpdateFileContents({
+            owner,
+            repo,
+            path: '${{ github.workspace }}/index.html',
+            message: 'Add index.html',
+            content: Buffer.from('index.html').toString('base64'),
+            sha: context.payload.before,
+            branch: context.payload.ref.replace('refs/heads/', ''),
+          });
+
