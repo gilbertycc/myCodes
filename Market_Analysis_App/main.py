@@ -1052,19 +1052,21 @@ def generate_html_end():
     return html_output
 
 
-def generate_full_html_report(index_stock,index_end,html_body_tab,html_body_stock):
+def generate_full_html_report(index_stock,index_end,html_body_tab,html_body_stock, export_file_path='../docs/'):
 
+    export_full_path=export_file_path+'index.html'
+    
     if index_stock == 0:
-      with open('index.html', 'w') as f_html:
+      with open(export_full_path, 'w') as f_html:
         f_html.write(generate_html_header())
         f_html.write(html_body_tab)
         f_html.write(html_body_stock)
     elif index_end == index_stock+1:
-      with open('index.html', 'a') as f_html:
+      with open(export_full_path, 'a') as f_html:
         f_html.write(html_body_stock)
         f_html.write(generate_html_end())
     else:
-       with open('index.html', 'a') as f_html:
+       with open(export_full_path, 'a') as f_html:
         f_html.write(html_body_stock)
 
 

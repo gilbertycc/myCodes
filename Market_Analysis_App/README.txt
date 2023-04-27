@@ -16,6 +16,7 @@ This is a Python application that analyzes stocks from the S&P500 stock list and
 
 Required Libraries
 The following libraries are required to run the application:
+# pip install yfinance pandas numpy matplotlib ipython yfinance
 
 datetime
 timedelta
@@ -27,6 +28,7 @@ io.StringIO
 io.BytesIO
 base64.b64encode
 IPython.core.display.HTML
+
 Usage
 Clone the repository to your local machine.
 Open the command line or terminal and navigate to the project directory.
