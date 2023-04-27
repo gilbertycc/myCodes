@@ -19,5 +19,18 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install yfinance
+        
+    - name: Display root directory
+      run: |
+        cd "${{ github.workspace }}"
+        pwd
+        ls
+
+    - name: Display checked-out file
+      run: |
+        cd "${{ github.workspace }}"
+        pwd
+        ls -l "${{ github.event.inputs.filename }}"
+        
     - name: Run script
-      run: python /gilbertycc/myCodes/main/Market_Analysis_App/main.py
+      run: python ${{ github.workspace }}/Market_Analysis_App/main.py
