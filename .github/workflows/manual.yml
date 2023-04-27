@@ -36,13 +36,13 @@ jobs:
         ls
       
     - name: Upload report
-        uses: actions/upload-artifact@v3
-        with:
-            name: report
-            path: index.html
+      uses: actions/upload-artifact@v3
+      with:
+        name: report
+        path: index.html
 
     - name: Upload report2
-        uses: actions/upload-artifact@v3
-        with:
-            name: report
-            path: ${{ github.workspace }}/docs/index.html
+      uses: actions/upload-artifact@v3
+      with:
+        name: report
+        path: ${{ github.workspace }}/docs/index.html
