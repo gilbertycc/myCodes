@@ -20,14 +20,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install yfinance pandas numpy matplotlib ipython yfinance
         
-    - name: Run script
-      run: python ${{ github.workspace }}/Market_Analysis_App/main.py
+    #- name: Run script
+    #  run: python ${{ github.workspace }}/Market_Analysis_App/main.py
 
-    - name: Configure Git
+    - name: Configure GitHub branch protection
       uses: angelosuinan/github-config-action@v1
       with:
-        user.name: gilbertycc
-        user.email: gilbertycc@gmail.com
+        access-token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository_owner }}/${{ github.repository_name }}
+        branch: main
+        enforce-admins: true
+        require-signed-commits: true
+        require-code-owner-reviews: false
+        require-review-approvals: 0
+        require-review-from-code-owners: false
 
     - name: Add and commit changes
       uses: EndBug/add-and-commit@v7.0.0
