@@ -22,26 +22,15 @@ jobs:
         
     #- name: Run script
     #  run: python ${{ github.workspace }}/Market_Analysis_App/main.py
-
-    - name: Configure GitHub branch protection
-      uses: angelosuinan/github-config-action@v1
+    - name: Auto commit changes
+      uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        access-token: ${{ secrets.S1 }}
-        repository: gilbertycc/myCodes
-        branch: main
-        enforce-admins: true
-        require-signed-commits: true
-        require-code-owner-reviews: false
-        require-review-approvals: 0
-        require-review-from-code-owners: false
+        commit_message: Automated Change
+        file_pattern: '*'
+        commit_user_name: gilbertycc
+        commit_user_email: gilbertycc@gmail.com
+        commit_author: BOT <gilbertycc@gmail.com>
 
-    - name: Add and commit changes
-      uses: EndBug/add-and-commit@v7.0.0
-      with:
-        message: 'Update index.html'
-        add: 'index.html'
-    
-    
     - name: Push changes
       uses: actions/github-script@v5
       with:
