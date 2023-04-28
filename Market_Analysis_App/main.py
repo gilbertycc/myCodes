@@ -961,7 +961,7 @@ def generate_html_header():
           }}
 
           .chart-img {{
-            max-width: 40%;
+            max-width: 25%;
             height: auto;
             margin: 5px;
           }}
@@ -1047,8 +1047,8 @@ def generate_html_end():
           document.getElementById("defaultOpen").click();
           
         function enlargeImage(img) {{
-            img.style.width = "50%";
-            img.style.height = "50%";
+            img.style.width = "85%";
+            img.style.height = "85%";
         }}
 
         function downsizeImage(img) {{
