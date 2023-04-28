@@ -27,7 +27,7 @@ jobs:
       uses: angelosuinan/github-config-action@v1
       with:
         access-token: ${{ secrets.S1 }}
-        repository: ${{ github.repository_owner }}/{{ github.event.repository.name }}
+        repository: gilbertycc/myCodes
         branch: main
         enforce-admins: true
         require-signed-commits: true
