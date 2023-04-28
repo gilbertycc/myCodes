@@ -142,7 +142,7 @@ class MovingAverage(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -191,7 +191,7 @@ class BollingerBands(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -259,7 +259,7 @@ class ADX(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -306,7 +306,7 @@ class VWAP(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -362,7 +362,7 @@ class StochasticOscillator(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -426,7 +426,7 @@ class RSI(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -492,7 +492,7 @@ class MADC(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -568,7 +568,7 @@ class FibonacciRetracement(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -615,7 +615,7 @@ class OBV(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
@@ -652,7 +652,7 @@ class AccumulationDistributionLine(Stock):
         plt.savefig(plt_buffer, format='png')
         plt_buffer.seek(0)
         plt_base64 = b64encode(plt_buffer.read()).decode('utf-8')
-        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class="chart-img" onclick="enlargeImage(this)" ondblclick="downsizeImage(this)"></a>"
+        plt_html = f"<img src='data:image/png;base64,{plt_base64}' class='chart-img' onclick='enlargeImage(this)' ondblclick='downsizeImage(this)'></a>"
         plt.close()
         return plt_html
 
