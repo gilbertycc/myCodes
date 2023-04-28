@@ -35,7 +35,7 @@ jobs:
           CI_COMMIT_AUTHOR: Continuous Integration
         run: |
           git config --global user.name "gilbertycc/yCodes"
-          git config --global user.email "username@users.noreply.github.com"
+          git config --global user.email "gilbertycc@gmail.com"
           git add docs
           git commit -m "Testing workflow"
           git push
