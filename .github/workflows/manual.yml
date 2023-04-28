@@ -23,18 +23,6 @@ jobs:
     - name: Run script
       run: python ${{ github.workspace }}/Market_Analysis_App/main.py
 
-    - name: Display report directory root
-      run: |
-        cd "${{ github.workspace }}"
-        pwd
-        ls
-      
-    - name: Display report directory
-      run: |
-        cd "${{ github.workspace }}/docs"
-        pwd
-        ls
-
     - name: Configure Git
       uses: angelosuinan/github-config-action@v1
       with:
@@ -59,7 +47,7 @@ jobs:
           gitHub.repos.createOrUpdateFileContents({
             owner,
             repo,
-            path: '${{ github.workspace }}/index.html',
+            path: '${{ github.workspace }}/docs/index.html',
             message: 'Add index.html',
             content: Buffer.from('index.html').toString('base64'),
             sha: context.payload.before,
