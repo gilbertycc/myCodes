@@ -27,7 +27,7 @@ jobs:
       uses: angelosuinan/github-config-action@v1
       with:
         user.name: gilbertycc
-        user.email: test@text.com
+        user.email: gilbertycc@gmail.com
 
     - name: Add and commit changes
       uses: EndBug/add-and-commit@v7.0.0
