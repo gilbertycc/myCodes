@@ -7,7 +7,7 @@ on:
 
 jobs:
   Trigger_Report_Generation_Workflow:
-    runs-on: Setup-RunTime-Env
+    runs-on: setup-runTime-env
     steps:
       - uses: actions/checkout@v3
         with:
