@@ -26,7 +26,9 @@ jobs:
 
       #- name: Run script
       #  run: python ${{ github.workspace }}/Market_Analysis_App/main.py
-
+      - name: Move file
+        run: |
+          mv ${{ github.workspace }}/docs/index.html ${{ github.workspace }}/docs/index.html.bak
       - name: GIT commit and push docs
         env: 
           CI_COMMIT_MESSAGE: Continuous Integration Build Artifacts
@@ -35,6 +37,6 @@ jobs:
           git config --global user.name "gilbertycc/yCodes"
           git config --global user.email "username@users.noreply.github.com"
           git add docs
-          git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
+          git commit -m "Testing workflow"
           git push
 
