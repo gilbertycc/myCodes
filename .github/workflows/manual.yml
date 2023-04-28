@@ -1,11 +1,13 @@
 name: Run Python script
 
-on:
+on: 
   workflow_dispatch:
 
 jobs:
   run_script:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
 
     steps:
       - uses: actions/checkout@v3
