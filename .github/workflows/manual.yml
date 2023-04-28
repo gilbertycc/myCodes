@@ -8,10 +8,11 @@ on:
       - main
   workflow_dispatch:
 
+permissions: write-all|read-all
+
 jobs:
   run_script:
     runs-on: ubuntu-latest
-    permissions: write-all
       #pull-requests: write
 
     steps:
