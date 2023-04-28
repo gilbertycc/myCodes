@@ -1,9 +1,12 @@
 name: Generate Stock Report and Deploy
 on:
+  # trigger the report generation from Mon to Fri at 2000
+  schedule:
+    - cron: "00 20 * * 1-5"
   workflow_dispatch:
 
 jobs:
-  Generate_report_and_update_Github_Page:
+  Setup-RunTime-Env:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,13 +24,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install yfinance pandas numpy matplotlib ipython yfinance
 
+jobs:
+  Generate-Daily-Stock-Report:
+      steps:
       - name: Run Python script
         run: python ${{ github.workspace }}/Market_Analysis_App/main.py
         
       - name: Move the report to the docs dir
         run: |
           mv -f ${{ github.workspace }}/index.html ${{ github.workspace }}/docs/index.html
-          
+
+jobs:
+  Deploy-Report-to-Github-Page:
+      steps:     
       - name: Commit the new report
         run: |
           git config --local user.email "windycc@users.noreply.github.com"
