@@ -27,7 +27,7 @@ matplotlib.pyplot
 io.StringIO
 io.BytesIO
 base64.b64encode
-IPython.core.display.HTML
+IPython.core.display.HTML (ipython==7.16.1)
 
 Usage
 Clone the repository to your local machine.
