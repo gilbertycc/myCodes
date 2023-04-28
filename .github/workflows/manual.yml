@@ -34,15 +34,15 @@ jobs:
       - name: Move file
         run: |
           mv ${{ github.workspace }}/docs/index.html ${{ github.workspace }}/docs/index.html.bak
-      - name: GIT commit and push docs
-        env: 
-          CI_COMMIT_MESSAGE: Continuous Integration Build Artifacts
-          CI_COMMIT_AUTHOR: Continuous Integration
+      - name: Commit files
         run: |
-          git config --global user.name "gilbertycc/myCodes"
-          git config --global user.email "gilbertycc@users.noreply.github.com"
-          git add docs
-          git commit -m "Testing workflow"
-          git push
+          git config --local user.email "windycc@users.noreply.github.com"
+          git config --local user.name "windycc"
+          git commit -a -m "Add changes"
+      -  name: Push changes
+         uses: ad-m/github-push-action@master
+         with:
+          github_token: ${{ secrets.S1 }}
+          branch: ${{ github.ref }}
 
 
