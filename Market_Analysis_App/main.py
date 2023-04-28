@@ -961,7 +961,7 @@ def generate_html_header():
           }}
 
           .chart-img {{
-            max-width: 25%;
+            width: 25%;
             height: auto;
             margin: 5px;
           }}
