@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Generate report and update Github Page:
+  Generate_report_and_update_Github_Page:
     runs-on: ubuntu-latest
 
     steps:
