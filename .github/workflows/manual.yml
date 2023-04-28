@@ -39,7 +39,7 @@ jobs:
     - name: Push changes
       uses: actions/github-script@v5
       with:
-        github-token: ${{ S1 }}
+        github-token: ${{ secrets.S1 }}
         script: |
           const { context, GitHub } = require('@actions/github');
           const { owner, repo } = context.repo;
