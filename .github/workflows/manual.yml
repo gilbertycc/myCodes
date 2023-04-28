@@ -26,8 +26,8 @@ jobs:
     - name: Configure GitHub branch protection
       uses: angelosuinan/github-config-action@v1
       with:
-        access-token: ${{ secrets.GITHUB_TOKEN }}
-        repository: ${{ github.repository_owner }}/${{ github.repository_name }}
+        access-token: ${{ secrets.S1 }}
+        repository: ${{ github.repository_owner }}/{{ github.event.repository.name }}
         branch: main
         enforce-admins: true
         require-signed-commits: true
@@ -59,4 +59,3 @@ jobs:
             sha: context.payload.before,
             branch: context.payload.ref.replace('refs/heads/', ''),
           });
-
