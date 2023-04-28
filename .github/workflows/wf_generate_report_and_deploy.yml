@@ -1,13 +1,13 @@
 name: Generate Stock Report and Deploy
 on:
   # trigger the report generation from Mon to Fri at 2000
-  #schedule:
-  #  - cron: "00 20 * * 1-5"
+  schedule:
+    - cron: "00 20 * * 1-5"
   workflow_dispatch:
 
 jobs:
   Trigger_Report_Generation_Workflow:
-    runs-on: setup-runTime-env
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
