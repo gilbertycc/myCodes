@@ -965,6 +965,12 @@ def generate_html_header():
             height: auto;
             margin: 5px;
           }}
+          
+          .bordered-table {{
+            border: 1px solid black;
+          }}
+
+          
         </style>
       </head>
       <body>
@@ -1119,7 +1125,7 @@ def main():
       }
 
       # Create HTML output
-      bb_signals_html = "<table>"
+      bb_signals_html = "<table class=\"bordered-table\">"
       for signal_type, signal_func in bb_signals.items():
         signal = 'Bullish signal detected' if signal_func() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
         color = GREEN if signal_func() else RED if bb_signal.is_bearish_ma() else ENDC
