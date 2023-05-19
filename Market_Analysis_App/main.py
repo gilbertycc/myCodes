@@ -970,6 +970,27 @@ def generate_html_header():
             border: 1px solid black;
           }}
 
+        ul.menu {{
+          list-style-type: none;
+          margin: 0;
+          padding: 0;
+          background-color: #f1f1f1;
+        }}
+
+        ul.menu li {{
+          display: inline-block;
+        }}
+
+        ul.menu li a {{
+          display: block;
+          padding: 8px 16px;
+          text-decoration: none;
+          color: #333;
+        }}
+
+        ul.menu li a:hover {{
+          background-color: #ddd;
+        }}
           
         </style>
       </head>
@@ -980,12 +1001,19 @@ def generate_html_header():
 def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, index_stock):
     html_output = f"""
     <div id="stock{index_stock}" class="tabcontent">
-      {review_stock.get_stock_info_html()}
+      <section id="stockInfo">
+        <h3>Stock Info</h3>
+        {review_stock.get_stock_info_html()}
+      </section>
       
-      <h3>Market Signal</h3>
-      {bb_signals_html_output}
+      <section id="marketSignal">
+        <h3>Market Signal</h3>
+        {bb_signals_html_output}
+      </section>
       
-      <h3>Technical Chart</h3>
+      <section id="technicalChart">
+        <h3>Technical Chart</h3>
+      </section>
       <div class="chart-container">
         {review_stock.plot_chart_MovingAverage_html()}
         {review_stock.plot_chart_BollingerBands_html()}
@@ -1088,11 +1116,12 @@ def generate_full_html_report(index_stock,index_end,html_body_tab,html_body_stoc
 
 def add_html_menu():
     menu_html=f"""
+     <h3>Reprot Menu</h3>
      <nav>
         <ul class="menu">
-      <li><a href="#">Stock Info</a></li>
-      <li><a href="#">Market Signal</a></li>
-      <li><a href="#">Technical Chart</a></li>
+          <li><a href="#stockInfo">Stock Info</a></li>
+          <li><a href="#marketSignal">Market Signal</a></li>
+          <li><a href="#technicalChart">Technical Chart</a></li>
         </ul>
     </nav>
     """
