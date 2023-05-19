@@ -968,8 +968,14 @@ def generate_html_header():
           
           .bordered-table {{
             border: 1px solid black;
+            border-collapse: collapse;
+            width: 100%;
           }}
-
+          
+        th, td {{
+          border: 1px solid black;
+          padding: 8px;
+        }}
         ul.menu {{
           list-style-type: none;
           margin: 0;
@@ -1116,7 +1122,6 @@ def generate_full_html_report(index_stock,index_end,html_body_tab,html_body_stoc
 
 def add_html_menu():
     menu_html=f"""
-     <h3>Reprot Menu</h3>
      <nav>
         <ul class="menu">
           <li><a href="#stockInfo">Stock Info</a></li>
