@@ -969,12 +969,13 @@ def generate_html_header():
           .bordered-table {{
             border: 1px solid black;
             border-collapse: collapse;
-            width: 100%;
+            width: 30%;
           }}
           
         th, td {{
           border: 1px solid black;
           padding: 8px;
+          text-align: left;
         }}
         ul.menu {{
           list-style-type: none;
