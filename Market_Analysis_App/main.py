@@ -1104,6 +1104,8 @@ def main():
 
     ##### Code in Main #####
     debug_mode=True
+    shorted_list_stock = []
+    
     if shorted_list_stock == False:
         lst_bull, lst_bear = scan_sp500_bb()
         shorted_list_stock = lst_bull + lst_bear
