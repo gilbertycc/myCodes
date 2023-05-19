@@ -21,8 +21,7 @@ jobs:
       - name: Install dependencies on Runtime env
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance pandas numpy matplotlib ipython==7.16.1 yfinance
-
+          pip install yfinance pandas numpy matplotlib ipython==7.16.1 yfinance torch torchsummary
 
       - name: Run Python script
         run: python ${{ github.workspace }}/Market_Analysis_App/main.py

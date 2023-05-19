@@ -7,6 +7,11 @@ from io import StringIO, BytesIO
 from base64 import b64encode
 from IPython.core.display import HTML
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
+
 
 
 
@@ -913,7 +918,6 @@ def scan_sp500_bb():
 
 def generate_html_header():
 
-
     get_now_date_obj = datetime.now()
     today_date_stamp = get_now_date_obj.strftime("%b, %d %Y")
 
@@ -1010,16 +1014,17 @@ def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, i
     <div id="stock{index_stock}" class="tabcontent">
       <section id="stockInfo">
         <h3>Stock Info</h3>
-        {review_stock.get_stock_info_html()}
       </section>
+      {review_stock.get_stock_info_html()}
+      
       
       <section id="marketSignal">
         <h3>Market Signal</h3>
         {bb_signals_html_output}
       </section>
       
-      <section id="technicalChart">
-        <h3>Technical Chart</h3>
+      <section id="technicalAnalysisChart">
+        <h3>Technical Analysis Chart</h3>
       </section>
       <div class="chart-container">
         {review_stock.plot_chart_MovingAverage_html()}
@@ -1032,6 +1037,13 @@ def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, i
         {review_stock.plot_chart_fibonacci_retracement_html()}
         {review_stock.plot_chart_obv_html()}
         {review_stock.plot_chart_ADL_html()}
+      </div>
+      
+      <section id="machineLearningChart">
+        <h3>Machine Learning Analysis Chart</h3>
+      </section>
+      <div class="chart-container">
+        Coming Soon!
       </div>
     </div>
     """
@@ -1127,7 +1139,8 @@ def add_html_menu():
         <ul class="menu">
           <li><a href="#stockInfo">Stock Info</a></li>
           <li><a href="#marketSignal">Market Signal</a></li>
-          <li><a href="#technicalChart">Technical Chart</a></li>
+          <li><a href="#technicalAnalysisChart">Technical Analysis Chart</a></li>
+          <li><a href="#machineLearningChart">Machine Learning Analysis Chart</a></li>
         </ul>
     </nav>
     """
@@ -1182,7 +1195,10 @@ def main():
       }
 
       # Create HTML output
-      bb_signals_html = "<table class=\"bordered-table\">"
+      bb_signals_html = f"""
+      <table class="bordered-table">
+      <tr><td>Signal Type</td><td>Signal</td></tr>
+      """
       for signal_type, signal_func in bb_signals.items():
         signal = 'Bullish signal detected' if signal_func() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
         color = GREEN if signal_func() else RED if bb_signal.is_bearish_ma() else ENDC
