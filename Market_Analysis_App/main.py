@@ -1118,12 +1118,13 @@ def main():
         'Bollinger Bands': bb_signal.is_bullish_bollinger_bands
       }
 
-      # Create HTML output
-      bb_signals_html = ""
-      for signal_type, signal_func in bb_signals.items():
-          signal = 'Bullish signal detected' if signal_func() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
-          color = GREEN if signal_func() else RED if bb_signal.is_bearish_ma() else ENDC
-          bb_signals_html += f"<p><span style='color:{color}'>[Bullish & Bearish Signal - {signal_type}] {signal}</span></p>"
+        # Create HTML output
+        bb_signals_html = "<table>"
+        for signal_type, signal_func in bb_signals.items():
+            signal = 'Bullish signal detected' if signal_func() else 'Bearish signal detected' if bb_signal.is_bearish_ma() else 'No clear signal detected'
+            color = GREEN if signal_func() else RED if bb_signal.is_bearish_ma() else ENDC
+            bb_signals_html += f"<tr><td>{signal_type}</td><td><span style='color:{color}'>{signal}</span></td></tr>"
+        bb_signals_html += "</table>"
 
       ''' [Debug] RR & RRR/ SharpRatio '''
       #sr = SharpeRatio(stock, '6mo', 0.04)
