@@ -1101,10 +1101,14 @@ def add_html_menu():
 
 def main():
 
+
     ##### Code in Main #####
-    lst_bull, lst_bear = scan_sp500_bb()
-    shorted_list_stock = lst_bull + lst_bear
-    #print (shorted_list_stock) #Enable for debug
+    debug_mode=True
+    if shorted_list_stock == False:
+        lst_bull, lst_bear = scan_sp500_bb()
+        shorted_list_stock = lst_bull + lst_bear
+    else:
+        shorted_list_stock = ['MSFT','MCS']
 
     html_body_tab = ""
     html_body_stock = ""
