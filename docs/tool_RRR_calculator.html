@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>RR and RRR Calculator</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script type="text/javascript">
+		function calculateRR() {
+			var entryPrice = parseFloat(document.getElementById("entry-price").value);
+			var stopLoss = parseFloat(document.getElementById("stop-loss").value);
+			var reward = Math.abs(parseFloat(document.getElementById("current-price").value) - entryPrice);
+			var risk = Math.abs(entryPrice - stopLoss);
+			var rr = reward / risk;
+
+			document.getElementById("rr-result").innerHTML = "RR: " + rr.toFixed(2);
+		}
+
+		function calculateRRR() {
+			var entryPrice = parseFloat(document.getElementById("entry-price").value);
+			var stopLoss = parseFloat(document.getElementById("stop-loss").value);
+			var targetPrice = parseFloat(document.getElementById("target-price").value);
+			var reward = Math.abs(targetPrice - entryPrice);
+			var risk = Math.abs(entryPrice - stopLoss);
+			var rrr = reward / risk;
+
+			document.getElementById("rrr-result").innerHTML = "RRR: " + rrr.toFixed(2);
+		}
+	</script>
+</head>
+<body>
+	<h1>RR and RRR Calculator</h1>
+	<form>
+		<label for="entry-price">Entry Price:</label>
+		<input type="number" step="0.01" id="entry-price" name="entry-price" required><br>
+
+		<label for="stop-loss">Stop Loss:</label>
+		<input type="number" step="0.01" id="stop-loss" name="stop-loss" required><br>
+
+		<label for="current-price">Current Price:</label>
+		<input type="number" step="0.01" id="current-price" name="current-price" required><br>
+
+		<label for="target-price">Target Price:</label>
+		<input type="number" step="0.01" id="target-price" name="target-price" required><br>
+
+		<br><br>
+
+		<input type="button" value="Calculate RR" onclick="calculateRR()">
+		<div id="rr-result"></div>
+
+		<input type="button" value="Calculate RRR" onclick="calculateRRR()">
+		<div id="rrr-result"></div>
+
+	</form>
+</body>
+</html>
