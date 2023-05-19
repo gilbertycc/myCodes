@@ -1086,8 +1086,17 @@ def generate_full_html_report(index_stock,index_end,html_body_tab,html_body_stoc
         f_html.write(html_body_stock)
 
 
-
-
+def add_html_menu():
+    menu_html=f"""
+     <nav>
+        <ul class="menu">
+      <li><a href="#">Stock Info</a></li>
+      <li><a href="#">Market Signal</a></li>
+      <li><a href="#">Technical Chart</a></li>
+        </ul>
+    </nav>
+    """
+    return menu_html
 
 
 def main():
@@ -1101,10 +1110,17 @@ def main():
     html_body_stock = ""
     #shorted_list_stock = ['VRSK','GOOG','BA','MSFT'] #Enable for debug
 
+
+
     # Prepare the html report body tab first as workaround of iopub_data_rate_limit bug
     for i in range(len(shorted_list_stock)):
       review_stock = Analysis_TA(shorted_list_stock[i], '1y')
       html_body_tab += generate_html_body_tab(shorted_list_stock[i],i,len(shorted_list_stock))
+
+
+    # Add a menu of the report in the html body
+    html_body_tab+=add_html_menu()
+
 
     for i in range(len(shorted_list_stock)):
       review_stock = Analysis_TA(shorted_list_stock[i], '1y')
@@ -1145,7 +1161,6 @@ def main():
       '''
 
       # Prepare the html report body tab first as workaround of iopub_data_rate_limit bug
-      #html_body_tab += generate_html_body_tab(shorted_list_stock[i],i,len(shorted_list_stock))
       html_body_stock = generate_html_body_stock(shorted_list_stock[i],review_stock, bb_signals_html, i)
       # [Debug] Generate report in HTML format
       generate_full_html_report(i,len(shorted_list_stock),html_body_tab,html_body_stock)
