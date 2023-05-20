@@ -1150,7 +1150,7 @@ def main():
 
 
     ##### Code in Main #####
-    debug_mode=True
+    debug_mode=False
     shorted_list_stock = []
     
     if shorted_list_stock == False:
