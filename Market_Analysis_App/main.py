@@ -2,15 +2,14 @@ from datetime import datetime, timedelta
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from io import StringIO, BytesIO
-from base64 import b64encode
-from IPython.core.display import HTML
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+import matplotlib.pyplot as plt
+from io import StringIO, BytesIO
+from base64 import b64encode
+from IPython.core.display import HTML
 
 
 
