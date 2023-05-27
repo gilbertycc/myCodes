@@ -1090,7 +1090,6 @@ def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, i
         <h3>Machine Learning Analysis Table</h3>
       </section>
       <div class="chart-container">
-        Coming Soon!
       </div>
       <table class="bordered-table">
         <tr><td>Symbol</td><td>Date</td><td>Model</td><td>Predicted Close</td><td>Actual Close</td></tr>
@@ -1202,7 +1201,7 @@ def main():
 
 
     ##### Code in Main #####
-    debug_mode=True
+    debug_mode=False
     shorted_list_stock = []
     
     if debug_mode == False:
