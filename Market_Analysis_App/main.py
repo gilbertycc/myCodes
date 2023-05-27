@@ -6,6 +6,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_percentage_error
 import matplotlib.pyplot as plt
 from io import StringIO, BytesIO
 from base64 import b64encode
@@ -1150,7 +1153,7 @@ def main():
 
 
     ##### Code in Main #####
-    debug_mode=False
+    debug_mode=True
     shorted_list_stock = []
     
     if debug_mode == False:
