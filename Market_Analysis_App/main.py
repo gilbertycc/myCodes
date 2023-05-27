@@ -126,11 +126,7 @@ class Stock:
         r_pred = rf_model.predict(current_data[feature_cols])
         
         # return the ticker, predition date, predicted price, acctual closing, Model Name
-        #return self.name_ticker, current_data.index[-1].strftime('%Y-%m-%d'), round(r_pred[-1],2), round(current_data['Close'].values[-1],2),model_name
-        html = f"<p>Symbol Type: {self.name_ticker}</p>"
-        html += f"<p>Current Data Period: {self.data_period}</p>"
-        html += f"<p>Current Data Period: {round(r_pred[-1],2)}</p>"
-
+        html = f"<tr><td>{name_ticker}</td><td>{current_data.index[-1].strftime('%Y-%m-%d')}</td><td>{model_name}</td><td>{round(r_pred[-1],2)}</td><td>{round(current_data['Close'].values[-1],2)}</td></tr>"
         return html
 
 
@@ -1091,12 +1087,15 @@ def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, i
       </div>
       
       <section id="machineLearningChart">
-        <h3>Machine Learning Analysis Chart</h3>
+        <h3>Machine Learning Analysis Table</h3>
       </section>
       <div class="chart-container">
         Coming Soon!
-        {review_stock.ml_RFR_html()}
       </div>
+      <table class="bordered-table">
+        <tr><td>Symbol</td><td>Date</td><td>Model</td><td>Predicted Close</td><td>Actual Close</td></tr>
+        {review_stock.ml_RFR_html()}
+      </table>
     </div>
     """
     return html_output
