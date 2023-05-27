@@ -88,45 +88,50 @@ class Stock:
         return html
 
 
-    def ml_RFR(self):
+    def ml_RFR_html(self):
 
-      model_name = 'RandomForestRegressor'
-      # Get the stock data from Yahoo Finance
-      stock_data = yf.download(self.name_ticker, period=self.data_period,progress=False)
-      
-      # Define the feature columns and target variable
-      feature_cols = ["Open", "High", "Low", "Volume"]
-      target_col = "Close"
+        model_name = 'RandomForestRegressor'
+        # Get the stock data from Yahoo Finance
+        stock_data = yf.download(self.name_ticker, period=self.data_period,progress=False)
+        
+        # Define the feature columns and target variable
+        feature_cols = ["Open", "High", "Low", "Volume"]
+        target_col = "Close"
+        
+        # Split the data into training and testing sets
+        x_train, x_test, y_train, y_test = train_test_split(
+            stock_data[feature_cols], stock_data[target_col], test_size=0.2, random_state=55
+        )
+        
+        # Define the Random Forest Regressor model
+        rf_model = RandomForestRegressor(n_estimators=400, random_state=55)
+        
+        # Train the model on the training data
+        rf_model.fit(x_train, y_train)
+        
+        # Predict the stock prices using the test data
+        y_pred = rf_model.predict(x_test)
+        
+        # Evaluate the model using R^2, RMSE, and MAPE
+        r2 = r2_score(y_test, y_pred)
+        rmse = mean_squared_error(y_test, y_pred, squared=False)
+        mape = mean_absolute_percentage_error(y_test, y_pred) * 100
+        
+        #print("Random Forest Regressor R^2 score:", r2)
+        #print("Random Forest Regressor RMSE:", rmse)
+        #print("Random Forest Regressor MAPE:", mape)
+        
+        # predict today close 
+        current_data = yf.download(self.name_ticker, period='1d')
+        r_pred = rf_model.predict(current_data[feature_cols])
+        
+        # return the ticker, predition date, predicted price, acctual closing, Model Name
+        #return self.name_ticker, current_data.index[-1].strftime('%Y-%m-%d'), round(r_pred[-1],2), round(current_data['Close'].values[-1],2),model_name
+        html = f"<p>Symbol Type: {self.name_ticker}</p>"
+        html += f"<p>Current Data Period: {self.data_period}</p>"
+        html += f"<p>Current Data Period: {round(r_pred[-1],2)}</p>"
 
-      # Split the data into training and testing sets
-      x_train, x_test, y_train, y_test = train_test_split(
-          stock_data[feature_cols], stock_data[target_col], test_size=0.2, random_state=55
-      )
-
-      # Define the Random Forest Regressor model
-      rf_model = RandomForestRegressor(n_estimators=400, random_state=55)
-
-      # Train the model on the training data
-      rf_model.fit(x_train, y_train)
-
-      # Predict the stock prices using the test data
-      y_pred = rf_model.predict(x_test)
-
-      # Evaluate the model using R^2, RMSE, and MAPE
-      r2 = r2_score(y_test, y_pred)
-      rmse = mean_squared_error(y_test, y_pred, squared=False)
-      mape = mean_absolute_percentage_error(y_test, y_pred) * 100
-
-      #print("Random Forest Regressor R^2 score:", r2)
-      #print("Random Forest Regressor RMSE:", rmse)
-      #print("Random Forest Regressor MAPE:", mape)
-
-      # predict today close 
-      current_data = yf.download(self.name_ticker, period='1d')
-      r_pred = rf_model.predict(current_data[feature_cols])
-      
-      # return the ticker, predition date, predicted price, acctual closing, Model Name
-      return self.name_ticker, current_data.index[-1].strftime('%Y-%m-%d'), round(r_pred[-1],2), round(current_data['Close'].values[-1],2),model_name
+        return html
 
 
     def __str__(self):
@@ -1090,7 +1095,7 @@ def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, i
       </section>
       <div class="chart-container">
         Coming Soon!
-        {print (review_stock.ml_RFR())}
+        {review_stock.ml_RFR_html()}
       </div>
     </div>
     """
