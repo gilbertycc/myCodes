@@ -28,6 +28,9 @@ io.StringIO
 io.BytesIO
 base64.b64encode
 IPython.core.display.HTML (ipython==7.16.1)
+torch
+torchsummary
+scikit-learn
 
 Usage
 Clone the repository to your local machine.
