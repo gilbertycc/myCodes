@@ -126,7 +126,7 @@ class Stock:
         r_pred = rf_model.predict(current_data[feature_cols])
         
         # return the ticker, predition date, predicted price, acctual closing, Model Name
-        html = f"<tr><td>{name_ticker}</td><td>{current_data.index[-1].strftime('%Y-%m-%d')}</td><td>{model_name}</td><td>{round(r_pred[-1],2)}</td><td>{round(current_data['Close'].values[-1],2)}</td></tr>"
+        html = f"<tr><td>{self.name_ticker}</td><td>{current_data.index[-1].strftime('%Y-%m-%d')}</td><td>{model_name}</td><td>{round(r_pred[-1],2)}</td><td>{round(current_data['Close'].values[-1],2)}</td></tr>"
         return html
 
 
