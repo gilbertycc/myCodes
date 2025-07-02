@@ -108,7 +108,7 @@ def check_bearish(name_ticker, no_signal=2, data_period='6mo', bb_signal=None):
     indicators = [
         {'name': 'Moving Average', 'is_bearish': bb_signal.is_bearish_ma()},
         {'name': 'Breakdown', 'is_bearish': bb_signal.is_bearish_bd()},
-        {'name': 'OversoldSignal(RSI)', is_bearish': bb_signal.is_bearish_rsi()},
+        {'name': 'OversoldSignal(RSI)', 'is_bearish': bb_signal.is_bearish_rsi()},
         {'name': 'Bollinger Bands', 'is_bearish': bb_signal.is_bearish_bollinger_bands()}
     ]
     tickers = [name_ticker for i in indicators if i['is_bearish']]
