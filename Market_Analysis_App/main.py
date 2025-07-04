@@ -53,7 +53,7 @@ class Stock:
             date_obj = datetime.strptime(target_date, '%Y-%m-%d')
             target_date_plus_one = date_obj + timedelta(days=1)
             ticker_data = yf.download(self.name_ticker, start=target_date, end=target_date_plus_one, progress=False)
-            return (target_date, ticker_data['Adj Close'].values[0])
+            return (target_date, ticker_data['Close'].values[0])
         except:
             print(f"[Error] Could not retrieve price for target date: {target_date}.")
             return None
@@ -61,7 +61,7 @@ class Stock:
     def get_price_history(self):
         try:
             ticker_data = yf.download(self.name_ticker, period=self.data_period, progress=False)
-            return ticker_data['Adj Close']
+            return ticker_data['Close']
         except:
             print("[Error] Could not retrieve price history.")
             return None
@@ -151,15 +151,15 @@ class MovingAverage(Stock):
             return None
 
         # calculate the MA
-        data_history['MA5'] = data_history['Adj Close'].rolling(window=5).mean()
-        data_history['MA10'] = data_history['Adj Close'].rolling(window=10).mean()
-        data_history['MA50'] = data_history['Adj Close'].rolling(window=50).mean()
-        data_history['MA200'] = data_history['Adj Close'].rolling(window=200).mean()
+        data_history['MA5'] = data_history['Close'].rolling(window=5).mean()
+        data_history['MA10'] = data_history['Close'].rolling(window=10).mean()
+        data_history['MA50'] = data_history['Close'].rolling(window=50).mean()
+        data_history['MA200'] = data_history['Close'].rolling(window=200).mean()
 
         # plot the data and the moving averages
         plt.figure(figsize=self.chart_figsize)
         plt.title(f"[DA] MA Chart of symbol: {self.name_ticker} (Period: {self.data_period})")
-        plt.plot(data_history.index, data_history['Adj Close'], label='Closing Price')
+        plt.plot(data_history.index, data_history['Close'], label='Closing Price')
         plt.plot(data_history.index, data_history['MA5'], label='MA5')
         plt.plot(data_history.index, data_history['MA10'], label='MA10')
         plt.plot(data_history.index, data_history['MA50'], label='MA50')
@@ -174,15 +174,15 @@ class MovingAverage(Stock):
             return None
 
         # calculate the MA
-        data_history['MA5'] = data_history['Adj Close'].rolling(window=5).mean()
-        data_history['MA10'] = data_history['Adj Close'].rolling(window=10).mean()
-        data_history['MA50'] = data_history['Adj Close'].rolling(window=50).mean()
-        data_history['MA200'] = data_history['Adj Close'].rolling(window=200).mean()
+        data_history['MA5'] = data_history['Close'].rolling(window=5).mean()
+        data_history['MA10'] = data_history['Close'].rolling(window=10).mean()
+        data_history['MA50'] = data_history['Close'].rolling(window=50).mean()
+        data_history['MA200'] = data_history['Close'].rolling(window=200).mean()
 
         # plot the data and the moving averages
         plt.figure(figsize=self.chart_figsize)
         plt.title(f"[DA] MA Chart of symbol: {self.name_ticker} (Period: {self.data_period})")
-        plt.plot(data_history.index, data_history['Adj Close'], label='Closing Price')
+        plt.plot(data_history.index, data_history['Close'], label='Closing Price')
         plt.plot(data_history.index, data_history['MA5'], label='MA5')
         plt.plot(data_history.index, data_history['MA10'], label='MA10')
         plt.plot(data_history.index, data_history['MA50'], label='MA50')
@@ -429,7 +429,7 @@ class RSI(Stock):
 
     def calculate_rsi(self):
         data_history = self.get_history_data()
-        delta = data_history['Adj Close'].diff()
+        delta = data_history['Close'].diff()
         up = delta.clip(lower=0)
         down = -1 * delta.clip(upper=0)
         ma_up = up.rolling(window=self.timeframe).mean()
@@ -449,7 +449,7 @@ class RSI(Stock):
         # plot the data and RSI
         plt.figure(figsize=self.chart_figsize)
         plt.title(f"[DA] RSI Chart of symbol: {self.name_ticker} (Period: {self.data_period}, Timeframe: {self.timeframe}) days")
-        plt.plot(data_history.index, data_history['Adj Close'], label='Closing Price')
+        plt.plot(data_history.index, data_history['Close'], label='Closing Price')
         plt.plot(rsi.index, rsi, label='RSI')
         plt.axhline(y=30, color='gray', linestyle='--')
         plt.axhline(y=70, color='gray', linestyle='--')
@@ -467,7 +467,7 @@ class RSI(Stock):
         # plot the data and RSI
         plt.figure(figsize=self.chart_figsize)
         plt.title(f"[DA] RSI Chart of symbol: {self.name_ticker} (Period: {self.data_period}, Timeframe: {self.timeframe}) days")
-        plt.plot(data_history.index, data_history['Adj Close'], label='Closing Price')
+        plt.plot(data_history.index, data_history['Close'], label='Closing Price')
         plt.plot(rsi.index, rsi, label='RSI')
         plt.axhline(y=30, color='gray', linestyle='--')
         plt.axhline(y=70, color='gray', linestyle='--')
@@ -496,8 +496,8 @@ class MADC(Stock):
             return None
 
         # calculate the short-term and long-term exponential moving averages
-        short_ema = data_history['Adj Close'].ewm(span=self.short_ma, adjust=False).mean()
-        long_ema = data_history['Adj Close'].ewm(span=self.long_ma, adjust=False).mean()
+        short_ema = data_history['Close'].ewm(span=self.short_ma, adjust=False).mean()
+        long_ema = data_history['Close'].ewm(span=self.long_ma, adjust=False).mean()
 
         # calculate the MACD line
         macd_line = short_ema - long_ema
@@ -722,7 +722,7 @@ class SharpeRatio(Stock):
         Stock.__init__(self, name_ticker)
         self.data_period = data_period
         self.risk_free_rate = risk_free_rate
-        self.stock_data = self.get_history_data()['Adj Close']
+        self.stock_data = self.get_history_data()['Close']
         self.daily_returns = self.stock_data.pct_change().dropna()
         self.annual_returns = self.daily_returns.mean() * 252
         self.annual_volatility = self.daily_returns.std() * np.sqrt(252)
@@ -811,13 +811,13 @@ class BullBearIndicator(Stock):
 
     ''' Signal - MA Indicator '''
     def calculate_moving_averages(self):
-        self.stock_data['SMA_short'] = self.stock_data['Adj Close'].rolling(window=self.short_window).mean()
-        self.stock_data['SMA_long'] = self.stock_data['Adj Close'].rolling(window=self.long_window).mean()
+        self.stock_data['SMA_short'] = self.stock_data['Close'].rolling(window=self.short_window).mean()
+        self.stock_data['SMA_long'] = self.stock_data['Close'].rolling(window=self.long_window).mean()
         
     def is_bullish_ma(self):
 
         self.calculate_moving_averages()
-        last_price = self.stock_data['Adj Close'].iloc[-1]
+        last_price = self.stock_data['Close'].iloc[-1]
         sma_short = self.stock_data['SMA_short'].iloc[-1]
         sma_long = self.stock_data['SMA_long'].iloc[-1]
         
@@ -828,7 +828,7 @@ class BullBearIndicator(Stock):
     
     def is_bearish_ma(self):
         self.calculate_moving_averages()
-        last_price = self.stock_data['Adj Close'].iloc[-1]
+        last_price = self.stock_data['Close'].iloc[-1]
         sma_short = self.stock_data['SMA_short'].iloc[-1]
         sma_long = self.stock_data['SMA_long'].iloc[-1]
         
@@ -839,7 +839,7 @@ class BullBearIndicator(Stock):
 
     ''' Signal - Breakdown Indicator '''          
     def calculate_sma(self, period):
-        return self.stock_data['Adj Close'].rolling(window=period).mean()
+        return self.stock_data['Close'].rolling(window=period).mean()
     
     def is_bullish_bd(self):
         sma_short = self.calculate_sma(self.short_window)
@@ -860,7 +860,7 @@ class BullBearIndicator(Stock):
 
     ''' Signal - OversoldSignal (RSI) Indicator '''
     def calculate_rsi(self, timefram):
-        delta = self.stock_data['Adj Close'].diff().dropna()
+        delta = self.stock_data['Close'].diff().dropna()
         gains = delta.copy()
         losses = delta.copy()
         gains[gains < 0] = 0
