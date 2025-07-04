@@ -535,138 +535,164 @@ class RRnRRR(Stock):
         return reward / (risk + 1e-10)
 
 class BullBearIndicator(Stock):
-    def __init__(self, name_ticker, data_period='1y', stock_data=None):
+    def __init__(self, name_ticker: str, data_period: str = '1y', stock_data: Optional[pd.DataFrame] = None):
+        """
+        Initialize BullBearIndicator with stock data and technical analysis parameters.
+        
+        Args:
+            name_ticker: Stock ticker symbol
+            data_period: Period for historical data (default '1y')
+            stock_data: Preloaded stock data (optional)
+        """
         super().__init__(name_ticker)
         self.set_data_period(data_period)
-        self.stock_data = stock_data if stock_data is not None else self.get_history_data()
-        if self.stock_data is not None:
-            self.stock_data = self.stock_data.dropna()
+        self.stock_data = self._validate_stock_data(stock_data)
+        
+        # Technical indicator parameters
         self.short_window = 20
         self.long_window = 50
         self.tf_rsi = 14
         self.std_dev = 2
         self.tf_bb = 20
-        self._indicators = {}
+        
+        # Cache for calculated indicators
+        self._indicators: Dict[str, Union[pd.Series, float]] = {}
+        self._data_validated = False
 
-    def calculate_moving_averages(self):
-        if self.stock_data is None or 'Close' not in self.stock_data.columns:
-            logging.error(f"No valid data for moving averages for {self.name_ticker}")
+    def _validate_stock_data(self, stock_data: Optional[pd.DataFrame]) -> Optional[pd.DataFrame]:
+        """Validate and clean the stock data."""
+        if stock_data is None:
+            stock_data = self.get_history_data()
+        
+        if stock_data is not None:
+            if 'Close' not in stock_data.columns:
+                logging.error(f"Stock data for {self.name_ticker} missing 'Close' column")
+                return None
+            
+            stock_data = stock_data.dropna()
+            if len(stock_data) < max(self.long_window, self.tf_bb, self.tf_rsi):
+                logging.warning(f"Insufficient data points for {self.name_ticker}")
+                return None
+            
+            # Ensure data is sorted chronologically
+            stock_data = stock_data.sort_index(ascending=True)
+            
+        return stock_data
+
+    def _ensure_data_validation(self) -> bool:
+        """Check if we have valid data for calculations."""
+        if self.stock_data is None or self.stock_data.empty:
+            return False
+        
+        if not self._data_validated:
+            self.stock_data = self._validate_stock_data(self.stock_data)
+            self._data_validated = True
+            
+        return self.stock_data is not None
+
+    def calculate_moving_averages(self) -> None:
+        """Calculate and cache short and long moving averages."""
+        if not self._ensure_data_validation():
             return
+            
         if 'SMA_short' not in self._indicators:
             self._indicators['SMA_short'] = self.stock_data['Close'].rolling(window=self.short_window).mean()
             self._indicators['SMA_long'] = self.stock_data['Close'].rolling(window=self.long_window).mean()
 
-    def is_bullish_ma(self):
-        if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.long_window:
+    def is_bullish_ma(self) -> bool:
+        """Check for bullish moving average crossover."""
+        if not self._ensure_data_validation():
             return False
+            
         self.calculate_moving_averages()
         last_price = self.stock_data['Close'].iloc[-1]
         sma_short = self._indicators['SMA_short'].iloc[-1]
         sma_long = self._indicators['SMA_long'].iloc[-1]
-        # Check for NaN values in scalar comparisons
-        if pd.isna(sma_short) or pd.isna(sma_long) or pd.isna(last_price):
-            return False
-        return sma_short > sma_long and last_price > sma_short
+        
+        return (pd.notna(sma_short) and pd.notna(sma_long) and 
+                sma_short > sma_long and last_price > sma_short)
 
-    def is_bearish_ma(self):
-        if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.long_window:
+    def is_bearish_ma(self) -> bool:
+        """Check for bearish moving average crossover."""
+        if not self._ensure_data_validation():
             return False
+            
         self.calculate_moving_averages()
         last_price = self.stock_data['Close'].iloc[-1]
         sma_short = self._indicators['SMA_short'].iloc[-1]
         sma_long = self._indicators['SMA_long'].iloc[-1]
-        # Check for NaN values in scalar comparisons
-        if pd.isna(sma_short) or pd.isna(sma_long) or pd.isna(last_price):
-            return False
-        return sma_short < sma_long and last_price < sma_short
+        
+        return (pd.notna(sma_short) and pd.notna(sma_long) and 
+                sma_short < sma_long and last_price < sma_short)
 
-    def calculate_sma(self, period):
-        if self.stock_data is None or 'Close' not in self.stock_data.columns:
-            return pd.Series()
-        return self.stock_data['Close'].rolling(window=period).mean()
+    def calculate_rsi(self) -> Optional[pd.Series]:
+        """Calculate and cache RSI values."""
+        if not self._ensure_data_validation():
+            return None
+            
+        if f'RSI_{self.tf_rsi}' not in self._indicators:
+            delta = self.stock_data['Close'].diff()
+            gain = delta.clip(lower=0)
+            loss = -delta.clip(upper=0)
+            
+            avg_gain = gain.rolling(self.tf_rsi).mean()
+            avg_loss = loss.rolling(self.tf_rsi).mean()
+            
+            rs = avg_gain / (avg_loss + 1e-10)  # Avoid division by zero
+            self._indicators[f'RSI_{self.tf_rsi}'] = 100 - (100 / (1 + rs))
+            
+        return self._indicators[f'RSI_{self.tf_rsi}']
 
-    def is_bullish_bd(self):
-        if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.long_window:
+    def is_bullish_rsi(self) -> bool:
+        """Check for bullish RSI signal (oversold condition)."""
+        rsi = self.calculate_rsi()
+        if rsi is None or len(rsi) < 2:
             return False
-        sma_short = self.calculate_sma(self.short_window)
-        sma_long = self.calculate_sma(self.long_window)
-        if sma_short.empty or sma_long.empty:
-            return False
-        # Check for NaN values in scalar comparisons
-        if (pd.isna(sma_short.iloc[-1]) or pd.isna(sma_long.iloc[-1]) or
-            pd.isna(sma_short.iloc[-2]) or pd.isna(sma_long.iloc[-2])):
-            return False
-        return sma_short.iloc[-1] > sma_long.iloc[-1] and sma_short.iloc[-2] < sma_long.iloc[-2]
+            
+        return (pd.notna(rsi.iloc[-1]) and pd.notna(rsi.iloc[-2]) and 
+                rsi.iloc[-1] < 30 and rsi.iloc[-2] >= 30)
 
-    def is_bearish_bd(self):
-        if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.long_window:
+    def is_bearish_rsi(self) -> bool:
+        """Check for bearish RSI signal (overbought condition)."""
+        rsi = self.calculate_rsi()
+        if rsi is None or len(rsi) < 2:
             return False
-        sma_short = self.calculate_sma(self.short_window)
-        sma_long = self.calculate_sma(self.long_window)
-        if sma_short.empty or sma_long.empty:
-            return False
-        # Check for NaN values in scalar comparisons
-        if (pd.isna(sma_short.iloc[-1]) or pd.isna(sma_long.iloc[-1]) or
-            pd.isna(sma_short.iloc[-2]) or pd.isna(sma_long.iloc[-2])):
-            return False
-        return sma_short.iloc[-1] < sma_long.iloc[-1] and sma_short.iloc[-2] > sma_long.iloc[-2]
+            
+        return (pd.notna(rsi.iloc[-1]) and pd.notna(rsi.iloc[-2]) and 
+                rsi.iloc[-1] > 70 and rsi.iloc[-2] <= 70)
 
-    def calculate_rsi(self, timeframe):
-        if self.stock_data is None or 'Close' not in self.stock_data.columns:
-            return pd.Series()
-        if f'RSI_{timeframe}' not in self._indicators:
-            delta = self.stock_data['Close'].diff().dropna()
-            gains = delta.clip(lower=0)
-            losses = -delta.clip(upper=0)
-            avg_gain = gains.rolling(timeframe).mean().dropna()
-            avg_loss = losses.rolling(timeframe).mean().dropna()
-            rs = avg_gain / (avg_loss + 1e-10)
-            self._indicators[f'RSI_{timeframe}'] = 100 - (100 / (1 + rs))
-        return self._indicators[f'RSI_{timeframe}']
-
-    def is_bullish_rsi(self):
-        rsi = self.calculate_rsi(self.tf_rsi)
-        if rsi.empty or len(rsi) < 2:
-            return False
-        # Check for NaN values in scalar comparisons
-        if pd.isna(rsi.iloc[-1]) or pd.isna(rsi.iloc[-2]):
-            return False
-        return rsi.iloc[-1] < 30 and rsi.iloc[-2] > 30
-
-    def is_bearish_rsi(self):
-        rsi = self.calculate_rsi(self.tf_rsi)
-        if rsi.empty or len(rsi) < 2:
-            return False
-        # Check for NaN values in scalar comparisons
-        if pd.isna(rsi.iloc[-1]) or pd.isna(rsi.iloc[-2]):
-            return False
-        return rsi.iloc[-1] > 70 and rsi.iloc[-2] < 70
-
-    def calculate_bollinger_bands(self):
-        if self.stock_data is None or 'Close' not in self.stock_data.columns:
+    def calculate_bollinger_bands(self) -> None:
+        """Calculate and cache Bollinger Bands."""
+        if not self._ensure_data_validation():
             return
-        self._indicators['MA'] = self.stock_data['Close'].rolling(window=self.tf_bb).mean()
-        self._indicators['STD'] = self.stock_data['Close'].rolling(window=self.tf_bb).std()
-        self._indicators['Upper Band'] = self._indicators['MA'] + (self._indicators['STD'] * self.std_dev)
-        self._indicators['Lower Band'] = self._indicators['MA'] - (self._indicators['STD'] * self.std_dev)
+            
+        if 'BB_MA' not in self._indicators:
+            self._indicators['BB_MA'] = self.stock_data['Close'].rolling(window=self.tf_bb).mean()
+            self._indicators['BB_STD'] = self.stock_data['Close'].rolling(window=self.tf_bb).std()
+            self._indicators['BB_Upper'] = self._indicators['BB_MA'] + (self._indicators['BB_STD'] * self.std_dev)
+            self._indicators['BB_Lower'] = self._indicators['BB_MA'] - (self._indicators['BB_STD'] * self.std_dev)
 
-    def is_bullish_bollinger_bands(self):
-        if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.tf_bb:
+    def is_bullish_bollinger_bands(self) -> bool:
+        """Check for bullish Bollinger Band signal (price below lower band)."""
+        if not self._ensure_data_validation():
             return False
+            
         self.calculate_bollinger_bands()
-        # Check for NaN values in scalar comparisons
-        if pd.isna(self._indicators['Lower Band'].iloc[-1]) or pd.isna(self.stock_data['Close'].iloc[-1]):
-            return False
-        return self.stock_data['Close'].iloc[-1] < self._indicators['Lower Band'].iloc[-1]
+        last_close = self.stock_data['Close'].iloc[-1]
+        lower_band = self._indicators['BB_Lower'].iloc[-1]
+        
+        return pd.notna(lower_band) and last_close < lower_band
 
-    def is_bearish_bollinger_bands(self):
-        if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.tf_bb:
+    def is_bearish_bollinger_bands(self) -> bool:
+        """Check for bearish Bollinger Band signal (price above upper band)."""
+        if not self._ensure_data_validation():
             return False
+            
         self.calculate_bollinger_bands()
-        # Check for NaN values in scalar comparisons
-        if pd.isna(self._indicators['Upper Band'].iloc[-1]) or pd.isna(self.stock_data['Close'].iloc[-1]):
-            return False
-        return self.stock_data['Close'].iloc[-1] > self._indicators['Upper Band'].iloc[-1]
+        last_close = self.stock_data['Close'].iloc[-1]
+        upper_band = self._indicators['BB_Upper'].iloc[-1]
+        
+        return pd.notna(upper_band) and last_close > upper_band
 
 def check_bullish(name_ticker, no_signal=2, data_period='6mo', bb_signal=None):
     if bb_signal is None:
