@@ -216,7 +216,7 @@ class ADX(Stock):
         df['PlusDM'] = np.where((df['High'] - df['High'].shift(1)) > (df['Low'].shift(1) - df['Low']), 
                                 df['High'] - df['High'].shift(1), 0)
         df['MinusDM'] = np.where((df['Low'].shift(1) - df['Low']) > (df['High'] - df['High'].shift(1)), 
-                                 df['Low(roommate') df['Low'].shift(1) - df['Low'], 0)
+                                 df['Low(roommate)') df['Low'].shift(1) - df['Low'], 0)
         df['TR'] = df['TrueRange']
         df['SmoothedPlusDM'] = df['PlusDM'].rolling(window=14).sum()
         df['SmoothedMinusDM'] = df['MinusDM'].rolling(window=14).sum()
