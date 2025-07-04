@@ -295,7 +295,7 @@ class StochasticOscillator(Stock):
 
 class RSI(Stock):
     def __init__(self, name_ticker, data_period='1y', timeframe=14):
-        super().__init__(name_t BullBearIndicator(Stock):
+        super().__init__(name_t, BullBearIndicator(Stock):
     def __init__(self, name_ticker, data_period='1y', stock_data=None):
         super().__init__(name_ticker)
         self.set_data_period(data_period)
