@@ -34,7 +34,7 @@ class Stock:
         try:
             ticker_data = yf.Ticker(self.name_ticker)
             info = ticker_data.info
-            for key in ["navPrice", "currentPrice", "ask"]:
+            for key in ["currentPrice", "ask", "navPrice"]:  # Adjusted key order
                 if key in info and info[key] is not None:
                     return info[key]
             logging.warning(f"No valid price found for {self.name_ticker}")
@@ -46,8 +46,7 @@ class Stock:
     def get_price_target_date(self, target_date):
         try:
             date_obj = datetime.strptime(target_date, '%Y-%m-%d')
-            target_date_plus_one = date_obj + timedelta(days=1)
-            ticker_data = yf.download(self.name_ticker, start=target_date, end=target_date_plus_one, progress=False, auto_adjust=True)
+            ticker_data = yf.download(self.name_ticker, start=target_date, end=date_obj + timedelta(days=1), progress=False, auto_adjust=True)
             if ticker_data.empty or 'Close' not in ticker_data.columns:
                 logging.error(f"No data for {self.name_ticker} on {target_date}")
                 return None
@@ -85,37 +84,49 @@ class Stock:
             stock_data = self.get_history_data()
             if stock_data is None or stock_data.empty:
                 logging.error(f"No data for RandomForestRegressor for {self.name_ticker}")
-                return "<tr><td colspan='5'>No data available for ML analysis</td></tr>"
+                return "<tr><td colspan='8'>No data available for ML analysis</td></tr>"
 
             feature_cols = ["Open", "High", "Low", "Volume"]
             target_col = "Close"
-            if not all(col in stock_data.columns for col in feature_cols + [target_col]):
-                logging.error(f"Missing required columns for {self.name_ticker}")
-                return "<tr><td colspan='5'>Missing required data columns</td></tr>"
 
-            x_train, x_test, y_train, y_test = train_test_split(
-                stock_data[feature_cols], stock_data[target_col], test_size=0.2, random_state=55
-            )
+            # Shift target to next day's close
+            stock_data['Next_Close'] = stock_data['Close'].shift(-1)
+            stock_data = stock_data.dropna(subset=['Next_Close'])
+
+            if stock_data.empty:
+                return "<tr><td colspan='8'>Insufficient data for ML analysis</td></tr>"
+
+            x = stock_data[feature_cols]
+            y = stock_data['Next_Close']
+
+            x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=55)
             rf_model = RandomForestRegressor(n_estimators=400, random_state=55)
             rf_model.fit(x_train, y_train)
-            current_data = yf.download(self.name_ticker, period='1d', progress=False, auto_adjust=True)
-            if current_data.empty or not all(col in current_data.columns for col in feature_cols):
-                logging.error(f"No current data for {self.name_ticker}")
-                return "<tr><td colspan='5'>No current data available</td></tr>"
 
-            r_pred = rf_model.predict(current_data[feature_cols])
+            y_pred = rf_model.predict(x_test)
+            r2 = r2_score(y_test, y_pred)
+            mse = mean_squared_error(y_test, y_pred)
+            mape = mean_absolute_percentage_error(y_test, y_pred)
+
+            last_day_features = stock_data[feature_cols].iloc[-1].values.reshape(1, -1)
+            predicted_next_close = rf_model.predict(last_day_features)[0]
+            next_date = stock_data.index[-1] + timedelta(days=1)
+
             return f"""
                 <tr>
                     <td>{self.name_ticker}</td>
-                    <td>{current_data.index[-1].strftime('%Y-%m-%d')}</td>
+                    <td>{next_date.strftime('%Y-%m-%d')}</td>
                     <td>RandomForestRegressor</td>
-                    <td>{round(r_pred[-1], 2)}</td>
-                    <td>{round(current_data['Close'].iloc[-1], 2)}</td>
+                    <td>{round(predicted_next_close, 2)}</td>
+                    <td>N/A</td>
+                    <td>{round(r2, 4)}</td>
+                    <td>{round(mse, 4)}</td>
+                    <td>{round(mape, 4)}</td>
                 </tr>
             """
         except Exception as e:
             logging.error(f"Error in ML analysis for {self.name_ticker}: {e}")
-            return "<tr><td colspan='5'>Error in ML analysis</td></tr>"
+            return "<tr><td colspan='8'>Error in ML analysis</td></tr>"
 
     def _plot_to_html(self, plot_func, title):
         plt.figure(figsize=(20, 12))
@@ -142,8 +153,8 @@ class MovingAverage(Stock):
 
     def plot_chart_MovingAverage_html(self):
         data_history = self.get_history_data()
-        if data_history is None or data_history.empty or 'Close' not in data_history.columns:
-            return "<p>No data available for Moving Average chart</p>"
+        if data_history is None or data_history.empty or 'Close' not in data_history.columns or len(data_history) < 200:
+            return "<p>Insufficient data for Moving Average chart</p>"
 
         data_history['MA5'] = data_history['Close'].rolling(window=5).mean()
         data_history['MA10'] = data_history['Close'].rolling(window=10).mean()
@@ -167,8 +178,8 @@ class BollingerBands(Stock):
 
     def plot_chart_BollingerBands_html(self):
         data_history = self.get_history_data()
-        if data_history is None or data_history.empty or 'Close' not in data_history.columns:
-            return "<p>No data available for Bollinger Bands chart</p>"
+        if data_history is None or data_history.empty or 'Close' not in data_history.columns or len(data_history) < 20:
+            return "<p>Insufficient data for Bollinger Bands chart</p>"
 
         data_history['MA20'] = data_history['Close'].rolling(window=20).mean()
         data_history['20dSTD'] = data_history['Close'].rolling(window=20).std()
@@ -202,21 +213,24 @@ class ADX(Stock):
     def calculate_directional_indicators(self, df):
         if df is None or df.empty:
             return pd.DataFrame()
-        df['UpMove'] = df['High'].diff()
-        df['DownMove'] = df['Low'].diff().abs()
-        df['UpMove'] = np.where(df['UpMove'] > df['DownMove'], df['UpMove'], 0)
-        df['DownMove'] = np.where(df['UpMove'] < df['DownMove'], df['DownMove'], 0)
-        df['AvgUpMove'] = df['UpMove'].rolling(window=14).mean()
-        df['AvgDownMove'] = df['DownMove'].rolling(window=14).mean()
-        df['PosDI'] = df['AvgUpMove'] / (df['TrueRange'] + 1e-10)
-        df['NegDI'] = df['AvgDownMove'] / (df['TrueRange'] + 1e-10)
-        df['ADX'] = (100 * (df['PosDI'] - df['NegDI']).abs() / (df['PosDI'] + df['NegDI'] + 1e-10)).rolling(window=14).mean()
-        return df[['PosDI', 'NegDI', 'ADX']]
+        df['PlusDM'] = np.where((df['High'] - df['High'].shift(1)) > (df['Low'].shift(1) - df['Low']), 
+                                df['High'] - df['High'].shift(1), 0)
+        df['MinusDM'] = np.where((df['Low'].shift(1) - df['Low']) > (df['High'] - df['High'].shift(1)), 
+                                 df['Low(roommate') df['Low'].shift(1) - df['Low'], 0)
+        df['TR'] = df['TrueRange']
+        df['SmoothedPlusDM'] = df['PlusDM'].rolling(window=14).sum()
+        df['SmoothedMinusDM'] = df['MinusDM'].rolling(window=14).sum()
+        df['SmoothedTR'] = df['TR'].rolling(window=14).sum()
+        df['PlusDI'] = 100 * df['SmoothedPlusDM'] / (df['SmoothedTR'] + 1e-10)
+        df['MinusDI'] = 100 * df['SmoothedMinusDM'] / (df['SmoothedTR'] + 1e-10)
+        df['DX'] = 100 * abs(df['PlusDI'] - df['MinusDI']) / (df['PlusDI'] + df['MinusDI'] + 1e-10)
+        df['ADX'] = df['DX'].rolling(window=14).mean()
+        return df[['PlusDI', 'MinusDI', 'ADX']]
 
     def plot_chart_ADX_html(self):
         data_history = self.get_history_data()
-        if data_history is None or data_history.empty:
-            return "<p>No data available for ADX chart</p>"
+        if data_history is None or data_history.empty or len(data_history) < 28:
+            return "<p>Insufficient data for ADX chart</p>"
         data_history = self.calculate_true_range(data_history)
         data_history = self.calculate_directional_indicators(data_history)
 
@@ -272,7 +286,7 @@ class StochasticOscillator(Stock):
 
     def calculate_stochastic_oscillator(self):
         ticker_data = self.get_history_data()
-        if ticker_data is None or ticker_data.empty:
+        if ticker_data is None or ticker_data.empty or len(ticker_data) < self.timeframe:
             return pd.Series(), pd.Series()
         high = ticker_data['High'].rolling(self.timeframe).max()
         low = ticker_data['Low'].rolling(self.timeframe).min()
@@ -283,7 +297,7 @@ class StochasticOscillator(Stock):
     def plot_chart_stochastic_oscillator_html(self):
         k, d = self.calculate_stochastic_oscillator()
         if k.empty or d.empty:
-            return "<p>No data available for Stochastic Oscillator chart</p>"
+            return "<p>Insufficient data for Stochastic Oscillator chart</p>"
 
         def plot_func():
             plt.plot(k, label='%K(Main)')
@@ -309,7 +323,7 @@ class RSI(Stock):
 
     def calculate_rsi(self):
         data_history = self.get_history_data()
-        if data_history is None or data_history.empty or 'Close' not in data_history.columns:
+        if data_history is None or data_history.empty or 'Close' not in data_history.columns or len(data_history) < self.timeframe:
             return pd.Series()
         delta = data_history['Close'].diff()
         up = delta.clip(lower=0)
@@ -322,8 +336,8 @@ class RSI(Stock):
 
     def plot_chart_rsi_html(self):
         data_history = self.get_history_data()
-        if data_history is None or data_history.empty or 'Close' not in data_history.columns:
-            return "<p>No data available for RSI chart</p>"
+        if data_history is None or data_history.empty or 'Close' not in data_history.columns or len(data_history) < self.timeframe:
+            return "<p>Insufficient data for RSI chart</p>"
         rsi = self.calculate_rsi()
 
         def plot_func():
@@ -344,7 +358,7 @@ class MADC(Stock):
 
     def calculate_madc(self):
         data_history = self.get_history_data()
-        if data_history is None or data_history.empty:
+        if data_history is None or data_history.empty or len(data_history) < self.long_ma:
             return pd.Series(), pd.Series(), pd.Series()
         short_ema = data_history['Close'].ewm(span=self.short_ma, adjust=False).mean()
         long_ema = data_history['Close'].ewm(span=self.long_ma, adjust=False).mean()
@@ -356,7 +370,7 @@ class MADC(Stock):
     def plot_chart_madc_html(self):
         macd_line, signal_line, ma_diff = self.calculate_madc()
         if macd_line.empty:
-            return "<p>No data available for MADC chart</p>"
+            return "<p>Insufficient data for MADC chart</p>"
 
         def plot_func():
             plt.plot(macd_line, label='MACD Line')
@@ -402,8 +416,8 @@ class FibonacciRetracement(Stock):
 
     def plot_chart_fibonacci_retracement_html(self):
         ticker_data = self.get_history_data()
-        if ticker_data is None or ticker_data.empty:
-            return "<p>No data available for Fibonacci Retracement chart</p>"
+        if ticker_data is None or ticker_data.empty or len(ticker_data) < 3:
+            return "<p>Insufficient data for Fibonacci Retracement chart</p>"
         highest_swing, lowest_swing = self.calculate_swing(ticker_data)
         levels, colors, ratios = self.calculate_fibonacci_levels(ticker_data, highest_swing, lowest_swing)
         if not levels:
@@ -425,7 +439,7 @@ class OBV(Stock):
 
     def calculate_obv(self):
         ticker_data = self.get_history_data()
-        if ticker_data is None or ticker_data.empty:
+        if ticker_data is None or ticker_data.empty or len(ticker_data) < 2:
             return pd.Series()
         obv = []
         prev_obv = 0
@@ -443,7 +457,7 @@ class OBV(Stock):
     def plot_chart_obv_html(self):
         obv_data = self.calculate_obv()
         if obv_data.empty:
-            return "<p>No data available for OBV chart</p>"
+            return "<p>Insufficient data for OBV chart</p>"
 
         def plot_func():
             plt.plot(obv_data.index, obv_data, label='OBV')
@@ -459,7 +473,7 @@ class AccumulationDistributionLine(Stock):
 
     def calculate_adl(self):
         df = self.get_history_data()
-        if df is None or df.empty:
+        if df is None or df.empty or len(df) < 2:
             return pd.DataFrame()
         df['CMF Multiplier'] = ((df['Close'] - df['Low']) - (df['High'] - df['Close'])) / (df['High'] - df['Low'] + 1e-10)
         df['CMF Volume'] = df['CMF Multiplier'] * df['Volume']
@@ -469,7 +483,7 @@ class AccumulationDistributionLine(Stock):
     def plot_chart_ADL_html(self):
         adl_data = self.calculate_adl()
         if adl_data.empty:
-            return "<p>No data available for ADL chart</p>"
+            return "<p>Insufficient data for ADL chart</p>"
 
         def plot_func():
             plt.plot(adl_data.index, adl_data['ADL'], label='ADL')
@@ -784,7 +798,7 @@ def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, i
                 <h3>Machine Learning Analysis Table</h3>
             </section>
             <table class="bordered-table">
-                <tr><td>Symbol</td><td>Date</td><td>Model</td><td>Predicted Close</td><td>Actual Close</td></tr>
+                <tr><td>Symbol</td><td>Prediction Date</td><td>Model</td><td>Predicted Close</td><td>Actual Close</td><td>R2</td><td>MSE</td><td>MAPE</td></tr>
                 {review_stock.ml_RFR_html()}
             </table>
         </div>
@@ -823,9 +837,7 @@ def generate_html_end():
             function enlargeImage(img) {{
                 img.style.width = "85%";
                 img.style.height = "85%";
-            }}
-            function resetImage(img) {{
-                img.style.width = "25%";
+ PRIVMSG #xai-alignment :img.style.width = "25%";
                 img.style.height = "auto";
             }}
         </script>
