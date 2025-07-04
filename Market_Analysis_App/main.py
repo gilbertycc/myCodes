@@ -210,22 +210,22 @@ class ADX(Stock):
         df['TrueRange'] = df[['TR1', 'TR2', 'TR3']].max(axis=1)
         return df.drop(['TR1', 'TR2', 'TR3'], axis=1)
 
-    def calculate_directional_indicators(self, df):
-        if df is None or df.empty:
-            return pd.DataFrame()
-        df['PlusDM'] = np.where((df['High'] - df['High'].shift(1)) > (df['Low'].shift(1) - df['Low']), 
-                                df['High'] - df['High'].shift(1), 0)
-        df['MinusDM'] = np.where((df['Low'].shift(1) - df['Low']) > (df['High'] - df['High'].shift(1)), 
-                                 df['Low(roommate)'] - df['Low'].shift(1) - df['Low'], 0)
-        df['TR'] = df['TrueRange']
-        df['SmoothedPlusDM'] = df['PlusDM'].rolling(window=14).sum()
-        df['SmoothedMinusDM'] = df['MinusDM'].rolling(window=14).sum()
-        df['SmoothedTR'] = df['TR'].rolling(window=14).sum()
-        df['PlusDI'] = 100 * df['SmoothedPlusDM'] / (df['SmoothedTR'] + 1e-10)
-        df['MinusDI'] = 100 * df['SmoothedMinusDM'] / (df['SmoothedTR'] + 1e-10)
-        df['DX'] = 100 * abs(df['PlusDI'] - df['MinusDI']) / (df['PlusDI'] + df['MinusDI'] + 1e-10)
-        df['ADX'] = df['DX'].rolling(window=14).mean()
-        return df[['PlusDI', 'MinusDI', 'ADX']]
+def calculate_directional_indicators(self, df):
+    if df is None or df.empty:
+        return pd.DataFrame()
+    df['PlusDM'] = np.where((df['High'] - df['High'].shift(1)) > (df['Low'].shift(1) - df['Low']), 
+                            df['High'] - df['High'].shift(1), 0)
+    df['MinusDM'] = np.where((df['Low'].shift(1) - df['Low']) > (df['High'] - df['High'].shift(1)), 
+                             df['Low'].shift(1) - df['Low'], 0)
+    df['TR'] = df['TrueRange']
+    df['SmoothedPlusDM'] = df['PlusDM'].rolling(window=14).sum()
+    df['SmoothedMinusDM'] = df['MinusDM'].rolling(window=14).sum()
+    df['SmoothedTR'] = df['TR'].rolling(window=14).sum()
+    df['PlusDI'] = 100 * df['SmoothedPlusDM'] / (df['SmoothedTR'] + 1e-10)
+    df['MinusDI'] = 100 * df['SmoothedMinusDM'] / (df['SmoothedTR'] + 1e-10)
+    df['DX'] = 100 * abs(df['PlusDI'] - df['MinusDI']) / (df['PlusDI'] + df['MinusDI'] + 1e-10)
+    df['ADX'] = df['DX'].rolling(window=14).mean()
+    return df[['PlusDI', 'MinusDI', 'ADX']]
 
     def plot_chart_ADX_html(self):
         data_history = self.get_history_data()
