@@ -563,7 +563,10 @@ class BullBearIndicator(Stock):
         last_price = self.stock_data['Close'].iloc[-1]
         sma_short = self._indicators['SMA_short'].iloc[-1]
         sma_long = self._indicators['SMA_long'].iloc[-1]
-        return not pd.isna(sma_short) and not pd.isna(sma_long) and sma_short > sma_long and last_price > sma_short
+        # Check for NaN values in scalar comparisons
+        if pd.isna(sma_short) or pd.isna(sma_long) or pd.isna(last_price):
+            return False
+        return sma_short > sma_long and last_price > sma_short
 
     def is_bearish_ma(self):
         if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.long_window:
@@ -572,7 +575,10 @@ class BullBearIndicator(Stock):
         last_price = self.stock_data['Close'].iloc[-1]
         sma_short = self._indicators['SMA_short'].iloc[-1]
         sma_long = self._indicators['SMA_long'].iloc[-1]
-        return not pd.isna(sma_short) and not pd.isna(sma_long) and sma_short < sma_long and last_price < sma_short
+        # Check for NaN values in scalar comparisons
+        if pd.isna(sma_short) or pd.isna(sma_long) or pd.isna(last_price):
+            return False
+        return sma_short < sma_long and last_price < sma_short
 
     def calculate_sma(self, period):
         if self.stock_data is None or 'Close' not in self.stock_data.columns:
@@ -586,9 +592,11 @@ class BullBearIndicator(Stock):
         sma_long = self.calculate_sma(self.long_window)
         if sma_short.empty or sma_long.empty:
             return False
-        return (not pd.isna(sma_short.iloc[-1]) and not pd.isna(sma_long.iloc[-1]) and
-                not pd.isna(sma_short.iloc[-2]) and not pd.isna(sma_long.iloc[-2]) and
-                sma_short.iloc[-1] > sma_long.iloc[-1] and sma_short.iloc[-2] < sma_long.iloc[-2])
+        # Check for NaN values in scalar comparisons
+        if (pd.isna(sma_short.iloc[-1]) or pd.isna(sma_long.iloc[-1]) or
+            pd.isna(sma_short.iloc[-2]) or pd.isna(sma_long.iloc[-2])):
+            return False
+        return sma_short.iloc[-1] > sma_long.iloc[-1] and sma_short.iloc[-2] < sma_long.iloc[-2]
 
     def is_bearish_bd(self):
         if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.long_window:
@@ -597,9 +605,11 @@ class BullBearIndicator(Stock):
         sma_long = self.calculate_sma(self.long_window)
         if sma_short.empty or sma_long.empty:
             return False
-        return (not pd.isna(sma_short.iloc[-1]) and not pd.isna(sma_long.iloc[-1]) and
-                not pd.isna(sma_short.iloc[-2]) and not pd.isna(sma_long.iloc[-2]) and
-                sma_short.iloc[-1] < sma_long.iloc[-1] and sma_short.iloc[-2] > sma_long.iloc[-2])
+        # Check for NaN values in scalar comparisons
+        if (pd.isna(sma_short.iloc[-1]) or pd.isna(sma_long.iloc[-1]) or
+            pd.isna(sma_short.iloc[-2]) or pd.isna(sma_long.iloc[-2])):
+            return False
+        return sma_short.iloc[-1] < sma_long.iloc[-1] and sma_short.iloc[-2] > sma_long.iloc[-2]
 
     def calculate_rsi(self, timeframe):
         if self.stock_data is None or 'Close' not in self.stock_data.columns:
@@ -618,13 +628,19 @@ class BullBearIndicator(Stock):
         rsi = self.calculate_rsi(self.tf_rsi)
         if rsi.empty or len(rsi) < 2:
             return False
-        return not pd.isna(rsi.iloc[-1]) and not pd.isna(rsi.iloc[-2]) and rsi.iloc[-1] < 30 and rsi.iloc[-2] > 30
+        # Check for NaN values in scalar comparisons
+        if pd.isna(rsi.iloc[-1]) or pd.isna(rsi.iloc[-2]):
+            return False
+        return rsi.iloc[-1] < 30 and rsi.iloc[-2] > 30
 
     def is_bearish_rsi(self):
         rsi = self.calculate_rsi(self.tf_rsi)
         if rsi.empty or len(rsi) < 2:
             return False
-        return not pd.isna(rsi.iloc[-1]) and not pd.isna(rsi.iloc[-2]) and rsi.iloc[-1] > 70 and rsi.iloc[-2] < 70
+        # Check for NaN values in scalar comparisons
+        if pd.isna(rsi.iloc[-1]) or pd.isna(rsi.iloc[-2]):
+            return False
+        return rsi.iloc[-1] > 70 and rsi.iloc[-2] < 70
 
     def calculate_bollinger_bands(self):
         if self.stock_data is None or 'Close' not in self.stock_data.columns:
@@ -638,20 +654,18 @@ class BullBearIndicator(Stock):
         if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.tf_bb:
             return False
         self.calculate_bollinger_bands()
-        return (not pd.isna(self._indicators['Lower Band'].iloc[-1]) and
-                self.stock_data['Close'].iloc[-1] < self._indicators['Lower Band'].iloc[-1])
+        # Check for NaN values in scalar comparisons
+        if pd.isna(self._indicators['Lower Band'].iloc[-1]) or pd.isna(self.stock_data['Close'].iloc[-1]):
+            return False
+        return self.stock_data['Close'].iloc[-1] < self._indicators['Lower Band'].iloc[-1]
 
     def is_bearish_bollinger_bands(self):
         if self.stock_data is None or self.stock_data.empty or len(self.stock_data) < self.tf_bb:
             return False
         self.calculate_bollinger_bands()
-        return (not pd.isna(self._indicators['Upper Band'].iloc[-1]) and
-                self.stock_data['Close'].iloc[-1] > self._indicators['Upper Band'].iloc[-1])
-
-    def is_bearish_bollinger_bands(self):
-        if self.stock_data is None or self.stock_data.empty:
+        # Check for NaN values in scalar comparisons
+        if pd.isna(self._indicators['Upper Band'].iloc[-1]) or pd.isna(self.stock_data['Close'].iloc[-1]):
             return False
-        self.calculate_bollinger_bands()
         return self.stock_data['Close'].iloc[-1] > self._indicators['Upper Band'].iloc[-1]
 
 def check_bullish(name_ticker, no_signal=2, data_period='6mo', bb_signal=None):
