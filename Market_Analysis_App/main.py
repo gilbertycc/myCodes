@@ -295,6 +295,72 @@ class StochasticOscillator(Stock):
 
 class RSI(Stock):
     def __init__(self, name_ticker, data_period='1y', timeframe=14):
+        super().__init__(name_t BullBearIndicator(Stock):
+    def __init__(self, name_ticker, data_period='1y', stock_data=None):
+        super().__init__(name_ticker)
+        self.set_data_period(data_period)
+        self.stock_data = stock_data if stock_data is not None else self.get_history_data()
+        if self.stock_data is not None:
+            self.stock_data = self.stock_data.dropna()
+        self.short_window = 20
+        self.long_window = 50
+        self.tf_rsi = 14
+        self.std_dev = 2
+        self.tf_bb = 20
+        self._indicators = {}
+
+    def calculate_moving_averages(self):
+        if self.stock_data is None or 'Close' not in self.stock_data.columns:
+            logging.error(f"No valid data for moving averages for {self.name_ticker}")
+            return
+        if 'SMA_short' not in self._indicators:
+            self._indicators['SMA_short'] = self.stock_data['Close'].rolling(window=self.short_window).mean()
+            self._indicators['SMA_long'] = self.stock_data['Close'].rolling(window=self.long_window).mean()
+
+    def is_bullish_ma(self):
+        if self.stock_data is None or self.stock_data.empty:
+            return False
+        self.calculate_moving_averages()
+        last_price = self.stock_data['Close'].iloc[-1]
+        sma_short = self._indicators['SMA_short'].iloc[-1]
+        sma_long = self._indicators['SMA_long'].iloc[-1]
+        return sma_short > sma_long and last_price > sma_short
+
+    def is_bearish_ma(self):
+        if self.stock_data is None or self.stock_data.empty:
+            return False
+        self.calculate_moving_averages()
+        last_price = self.stock_data['Close'].iloc[-1]
+        sma_short = self._indicators['SMA_short'].iloc[-1]
+        sma_long = self._indicators['SMA_long'].iloc[-1]
+        return sma_short < sma_long and last_price < sma_short
+
+    def calculate_sma(self, period):
+        if self.stock_data is None or 'Close' not in self.stock_data.columns:
+            return pd.Series()
+        return self.stock_data['Close'].rolling(window=period).mean()
+
+    def is_bullish_bd(self):
+        sma_short = self.calculate_sma(self.short_window)
+        sma_long = self.calculate_sma(self.long_window)
+        if sma_short.empty or sma_long.empty:
+            return False
+        return sma_short.iloc[-1] > sma_long.iloc[-1] and sma_short.iloc[-2] < sma_long.iloc[-2]
+
+    def is_bearish_bd(self):
+        sma_short = self.calculate_sma(self.short_window)
+        sma_long = self.calculate_sma(self.long_window)
+        if sma_short.empty or sma_long.empty:
+            return False
+        return sma_short.iloc[-1] < sma_long.iloc[-1] and sma_short.iloc[-2] > sma_long.iloc[-2]
+
+    def calculate_rsi(self, timeframe):
+        if self.stock_data is None or 'Close' not in self.stock_data.columns:
+            return pd.Series()
+        if f'RSI_{timeframe}' not in self._indicators:
+            delta = self.stock_data['Close'].diff().dropna()
+            gains =zeneggerator(Stock):
+    def __init__(self, name_ticker, data_period='1y', timeframe=14):
         super().__init__(name_ticker)
         self.set_data_period(data_period)
         self.timeframe = timeframe
@@ -594,13 +660,13 @@ class BullBearIndicator(Stock):
 
     def is_bullish_rsi(self):
         rsi = self.calculate_rsi(self.tf_rsi)
-        if rsi.empty:
+        if rsi.empty or len(rsi) < 2:
             return False
         return rsi.iloc[-1] < 30 and rsi.iloc[-2] > 30
 
     def is_bearish_rsi(self):
         rsi = self.calculate_rsi(self.tf_rsi)
-        if rsi.empty:
+        if rsi.empty or len(rsi) < 2:
             return False
         return rsi.iloc[-1] > 70 and rsi.iloc[-2] < 70
 
@@ -616,13 +682,17 @@ class BullBearIndicator(Stock):
         if self.stock_data is None or self.stock_data.empty:
             return False
         self.calculate_bollinger_bands()
-        return self.stock_data['Close'].iloc[-1] < self._indicators['Lower Band'].iloc[-1]
+        last_price = self.stock_data['Close'].iloc[-1]
+        lower_band = self._indicators['Lower Band'].iloc[-1]
+        return last_price < lower_band
 
     def is_bearish_bollinger_bands(self):
         if self.stock_data is None or self.stock_data.empty:
             return False
         self.calculate_bollinger_bands()
-        return self.stock_data['Close'].iloc[-1] > self._indicators['Upper Band'].iloc[-1]
+        last_price = self.stock_data['Close'].iloc[-1]
+        upper_band = self._indicators['Upper Band'].iloc[-1]
+        return last_price > upper_band
 
 def check_bullish(name_ticker, no_signal=2, data_period='6mo', bb_signal=None):
     if bb_signal is None:
@@ -635,8 +705,8 @@ def check_bullish(name_ticker, no_signal=2, data_period='6mo', bb_signal=None):
         {'name': 'OversoldSignal(RSI)', 'is_bullish': bb_signal.is_bullish_rsi()},
         {'name': 'Bollinger Bands', 'is_bullish': bb_signal.is_bullish_bollinger_bands()}
     ]
-    tickers = [name_ticker for i in indicators if i['is_bullish']]
-    return name_ticker if len(tickers) >= no_signal else None
+    bullish_signals = sum(1 for i in indicators if i['is_bullish'])
+    return name_ticker if bullish_signals >= no_signal else None
 
 def check_bearish(name_ticker, no_signal=2, data_period='6mo', bb_signal=None):
     if bb_signal is None:
@@ -649,8 +719,8 @@ def check_bearish(name_ticker, no_signal=2, data_period='6mo', bb_signal=None):
         {'name': 'OversoldSignal(RSI)', 'is_bearish': bb_signal.is_bearish_rsi()},
         {'name': 'Bollinger Bands', 'is_bearish': bb_signal.is_bearish_bollinger_bands()}
     ]
-    tickers = [name_ticker for i in indicators if i['is_bearish']]
-    return name_ticker if len(tickers) >= no_signal else None
+    bearish_signals = sum(1 for i in indicators if i['is_bearish'])
+    return name_ticker if bearish_signals >= no_signal else None
 
 def scan_sp500_bb():
     lst_bullish = []
@@ -767,7 +837,7 @@ def generate_html_body_stock(name_stock, review_stock, bb_signals_html_output, i
             </section>
             <section id="technicalAnalysisChart">
                 <h3>Technical Analysis Chart</h3>
-            </section>
+            </iren)
             <div class="chart-container">
                 {review_stock.plot_chart_MovingAverage_html()}
                 {review_stock.plot_chart_BollingerBands_html()}
