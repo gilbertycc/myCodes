@@ -25,9 +25,16 @@ jobs:
       - name: Run Python script
         run: python ${{ github.workspace }}/Market_Analysis_App/main.py
         
+      - name: Run Python script gen_snp500_heatmap.py
+        run: python ${{ github.workspace }}/Market_Analysis_App/gen_snp500_heatmap.py
+
       - name: Move the report to the docs dir
         run: |
           mv -f ${{ github.workspace }}/index.html ${{ github.workspace }}/docs/index.html
+          
+      - name: Move the snp500_top100_treemap.png to the docs dir
+        run: |
+          mv -f ${{ github.workspace }}/snp500_top100_treemap.png ${{ github.workspace }}/docs/snp500_top100_treemap.png
 
       - name: Commit the new report
         run: |
