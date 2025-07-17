@@ -170,7 +170,7 @@ for i, rect in enumerate(plt.gca().patches):
 #plt.axis('off')
 #plt.tight_layout()
 #plt.show()
-
+plt.close('all')        # <- close any previous figure
 
 ###############################################################################
 # ENHANCED TREEMAP
@@ -243,4 +243,4 @@ plt.savefig("./snp500_top100_treemap.png",
             bbox_inches="tight",
             facecolor=fig.get_facecolor(),
             edgecolor='none')
-plt.show()
+#plt.show()
