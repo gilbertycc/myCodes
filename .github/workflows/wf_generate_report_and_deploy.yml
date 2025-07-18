@@ -2,7 +2,7 @@ name: Generate Stock Report and Deploy
 on:
   # trigger the report generation from Mon to Fri at 2000
   schedule:
-    - cron: "00 23 * * 1-5"
+    - cron: "00 01 * * 2-6"
   workflow_dispatch:
 
 jobs:
