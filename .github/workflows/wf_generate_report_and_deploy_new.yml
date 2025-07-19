@@ -1,80 +1,48 @@
-# ------------- Enhanced Plot -------------
-import seaborn as sns
-sns.set_theme(style='whitegrid', palette='colorblind')
+name: Generate Stock Report and Deploy v2
+on:
+  schedule:
+    # Run Mon-Fri at 20:00 UTC (01:00 next day in cron due to UTC offset)
+    - cron: "00 20 * * 1-5"
+  workflow_dispatch:
 
-fig, ax = plt.subplots(figsize=(12, 6))
-sns.despine(ax=ax, left=True, right=True, top=True)
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-# Histogram
-sns.histplot(
-    mc_prices,
-    bins=60,
-    kde=True,
-    stat='density',
-    color='#4c72b0',
-    edgecolor='white',
-    linewidth=0.5,
-    alpha=0.25,
-    ax=ax,
-    label='Monte-Carlo'
-)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'  # Upgrade to a more recent, supported version
+          cache: 'pip'  # Cache pip dependencies for faster runs
 
-# Vertical lines for predictions
-ax.axvline(
-    lr_pred,
-    color='#c44e52',
-    ls='--',
-    lw=2.5,
-    label=f'Linear Regression  ${lr_pred:.2f}'
-)
-ax.axvline(
-    lstm_pred,
-    color='#55a868',
-    ls='--',
-    lw=2.5,
-    label=f'LSTM               ${lstm_pred:.2f}'
-)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install holidays yfinance pandas numpy matplotlib ipython==7.16.1 torch lxml torchsummary scikit-learn
 
-# Shaded price-level bands
-for i, (low, high) in enumerate(price_levels):
-    ax.axvspan(
-        low,
-        high,
-        ymin=0,
-        ymax=0.15,
-        color='#ffd166',
-        alpha=0.4,
-        label='Price Band' if i == 0 else None
-    )
+      - name: Run main analysis script
+        run: python ${{ github.workspace }}/Market_Analysis_App/main.py
 
-# Annotations
-ax.text(
-    0.02,
-    0.97,
-    f'{ticker} – simulated close price on {target_date}',
-    transform=ax.transAxes,
-    ha='left',
-    va='top',
-    fontsize=13,
-    weight='bold',
-    color='black'
-)
-ax.text(
-    0.02,
-    0.92,
-    f'Last Close: ${latest_price:.2f}',
-    transform=ax.transAxes,
-    ha='left',
-    va='top',
-    fontsize=11,
-    color='dimgray'
-)
+      - name: Generate S&P 500 heatmap
+        run: python ${{ github.workspace }}/Market_Analysis_App/gen_snp500_heatmap.py
 
-ax.set_xlabel('Price ($)', fontsize=12, labelpad=10)
-ax.set_ylabel('Density', fontsize=12, labelpad=10)
-ax.legend(loc='upper right', frameon=False, fontsize=10)
-ax.grid(alpha=0.25, lw=0.5)
+      - name: Move generated files to docs
+        run: |
+          mv -f ${{ github.workspace }}/index.html ${{ github.workspace }}/docs/index.html
+          mv -f ${{ github.workspace }}/snp500_top100_treemap.png ${{ github.workspace }}/docs/snp500_top100_treemap.png
+        continue-on-error: true  # Continue even if files are missing
 
-plt.tight_layout()
-plt.savefig(f'{ticker.lower()}_price_distribution.png', dpi=300, bbox_inches='tight')
-plt.show()
+      - name: Commit and push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.email "windycc@users.noreply.github.com"
+          git config user.name "windycc"
+          git add docs/
+          git commit -m "Deploy updated stock report to GitHub Pages" || echo "No changes to commit"
+          git push origin ${{ github.ref_name }}
