@@ -80,7 +80,7 @@ class Stock:
                 return None
             else:
                 return data_history
-
+ 
     def get_stock_info_html(self):
         html = f"<p>Symbol Type: {self.symbol_type}</p>"
         html += f"<p>Ticker: {self.name_ticker}</p>"
@@ -923,6 +923,9 @@ class BullBearIndicator(Stock):
 
 
 def check_bullish(name_ticker, no_signal=2, data_period='6mo'):
+    data = BullBearIndicator(ticker, data_period)
+    if data.stock_data is None:      # ticker failed to download
+        return None
     bb_signal = BullBearIndicator(name_ticker, data_period)
     indicators = [
         {'name': 'Moving Average', 'is_bullish': bb_signal.is_bullish_ma()},
