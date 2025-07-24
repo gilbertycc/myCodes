@@ -923,8 +923,8 @@ class BullBearIndicator(Stock):
 
 
 def check_bullish(name_ticker, no_signal=2, data_period='6mo'):
-    data = BullBearIndicator(ticker, data_period)
-    if data.stock_data is None:      # ticker failed to download
+    bb_signal = BullBearIndicator(name_ticker, data_period)
+    if bb_signal.stock_data is None:          # no data received
         return None
     bb_signal = BullBearIndicator(name_ticker, data_period)
     indicators = [
