@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance holidays pandas numpy matplotlib ipython>=8.0 torch lxml torchsummary scikit-learn
-
+            pip install yfinance holidays pandas numpy matplotlib ipython>=8.0 torch lxml torchsummary scikit-learn retrying
+      
       - name: Run main.py (with retry)
         uses: nick-fields/retry@v3
         with:
