@@ -1,4 +1,3 @@
-from retrying import retry
 from datetime import datetime, timedelta
 import yfinance as yf
 import pandas as pd
@@ -15,9 +14,17 @@ from io import StringIO, BytesIO
 from base64 import b64encode
 from retrying import retry
 import logging
+import requests
+from urllib.parse import quote
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Fallback S&P 500 tickers (partial list for demonstration; expand as needed)
+FALLBACK_TICKERS = [
+    'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'TSLA', 'BRK-B', 'JPM', 'V', 'WMT',
+    'NVDA', 'UNH', 'PG', 'HD', 'DIS', 'MA', 'PYPL', 'NFLX', 'ADBE', 'INTC'
+]
 
 class Stock:
     symbol_type = "stock"
@@ -959,22 +966,29 @@ def scan_sp500_bb():
                 <tr><th>Ticker</th><th>Prediction Date</th><th>Model</th><th>Predicted Close</th><th>Actual Close</th></tr>
     """
     
-    @retry(stop_max_attempt_number=3, wait_fixed=2000)
+    @retry(stop_max_attempt_number=3, wait_fixed=5000)
     def fetch_sp500_tickers():
         try:
             url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
-            dfs = pd.read_html(url, header=0)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            dfs = pd.read_html(StringIO(response.text), header=0)
             sp500_df = dfs[0]
             sp500_tickers = sp500_df['Symbol'].tolist()
             sp500_tickers = [ticker.replace(".", "-") for ticker in sp500_tickers]
+            logging.info(f"Successfully fetched {len(sp500_tickers)} S&P 500 tickers")
             return sp500_tickers
         except Exception as e:
             logging.error(f"Error fetching S&P 500 tickers: {e}")
-            return []
+            logging.info("Using fallback ticker list")
+            return FALLBACK_TICKERS
 
     sp500_tickers = fetch_sp500_tickers()
     if not sp500_tickers:
-        logging.error("No S&P 500 tickers retrieved. Generating empty report.")
+        logging.error("No S&P 500 tickers available. Generating empty report.")
         html_content += "</table></div><div class='section'><h2>Bearish Stocks</h2><table><tr><th>Ticker</th><th>Prediction Date</th><th>Model</th><th>Predicted Close</th><th>Actual Close</th></tr></table></div></body></html>"
         with open('index.html', 'w') as f:
             f.write(html_content)
@@ -982,6 +996,7 @@ def scan_sp500_bb():
 
     # Limit to a subset of tickers to avoid rate limits and long runtime
     sample_tickers = sp500_tickers[:10]  # Adjust as needed
+    logging.info(f"Processing {len(sample_tickers)} tickers: {sample_tickers}")
     for ticker in sample_tickers:
         try:
             if check_bullish(ticker):
@@ -1035,6 +1050,7 @@ def scan_sp500_bb():
     try:
         with open('index.html', 'w') as f:
             f.write(html_content)
+        logging.info("Successfully wrote index.html")
     except Exception as e:
         logging.error(f"Error writing index.html: {e}")
     
