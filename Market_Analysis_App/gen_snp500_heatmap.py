@@ -29,21 +29,36 @@ pd.options.mode.chained_assignment = None
 np.set_printoptions(legacy='1.25')
 
 def get_sp500_list():
-    url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+    """
+    Return S&P-500 constituents as a DataFrame with columns
+    Symbol, Security, GICS Sector …
+    Tries Wikipedia first, falls back to a static CSV on GitHub.
+    """
+    # 1. Wikipedia -----------------------------------------------------------
+    wiki = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        tables = pd.read_html(StringIO(response.text))
-        sp500_df = tables[0]
-        sp500_df = sp500_df[['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry', 'Headquarters Location', 'Date added', 'CIK']]
-        sp500_df['Symbol'] = sp500_df['Symbol'].str.replace('.', '-', regex=False)
-        return sp500_df
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data: {e}")
-        return None
-    except ValueError as e:
-        print(f"Error parsing table: {e}")
-        return None
+        tables = pd.read_html(wiki)
+        df = tables[0][["Symbol", "Security", "GICS Sector",
+                        "GICS Sub-Industry", "Headquarters Location",
+                        "Date added", "CIK"]]
+    except Exception as e:
+        print("Wikipedia blocked (%s)  –  using fallback CSV" % e)
+        # 2. Fallback CSV ------------------------------------------------------
+        csv = ("https://raw.githubusercontent.com/datasets/"
+               "s-and-p-500-companies/main/data/constituents.csv")
+        df = pd.read_csv(csv)
+        # rename columns to match Wikipedia schema
+        df = df.rename(columns={"Symbol": "Symbol",
+                                "Name": "Security",
+                                "Sector": "GICS Sector",
+                                "SubIndustry": "GICS Sub-Industry",
+                                "Headquarters": "Headquarters Location",
+                                "CIK": "CIK"})
+        df["Date added"] = pd.NaT
+
+    # normalise ticker format for yfinance
+    df["Symbol"] = df["Symbol"].str.replace(".", "-", regex=False)
+    return df
 
 def get_closing_price_and_market_cap(ticker, date=(datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d'), max_attempts=5):
     try:
